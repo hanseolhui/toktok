@@ -65,7 +65,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
         multitouch = mt
+        Multitouch.current = mt
         mt.restart()
+        mt.watchDevices()
 
         // 새 버전이 있는지 조용히 확인 (있으면 메뉴·설정에 표시)
         Task { await Updater.shared.check(silent: true) }
@@ -113,7 +115,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(item(t("⚠️ 손쉬운 사용 권한 허용하기…", "⚠️ Allow Accessibility access…"), #selector(openAccessibility)))
         }
         menu.addItem(item(t("트랙패드 다시 찾기 (\(multitouch?.deviceCount ?? 0)개 연결됨)", "Rescan trackpads (\(multitouch?.deviceCount ?? 0) connected)"), #selector(rescan)))
-        menu.addItem(item(t("디버그 로그 기록", "Debug logging"), #selector(toggleDebug), checked: Log.enabled))
         menu.addItem(.separator())
         menu.addItem(item(t("톡톡 종료", "Quit TokTok"), #selector(quit), key: "q"))
     }
@@ -148,11 +149,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
-    @objc private func toggleDebug() {
-        Log.enabled.toggle()
-        UserDefaults.standard.set(Log.enabled, forKey: "debug")
-        if Log.enabled { NSWorkspace.shared.open(Log.url.deletingLastPathComponent()) }
-    }
 
     @objc private func openGuide() { NSWorkspace.shared.open(Store.guideURL) }
     @objc private func rescan() { multitouch?.restart() }

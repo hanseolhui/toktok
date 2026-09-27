@@ -1,8 +1,11 @@
 import Foundation
+import IOKit
 
 // MARK: - MultitouchSupport 연결 (비공개 프레임워크를 dlsym 으로 사용)
 
 final class Multitouch {
+    /// 앱에서 쓰는 인스턴스 (설정 창의 문제 해결에서 사용)
+    static weak var current: Multitouch?
     private typealias CreateList = @convention(c) () -> Unmanaged<CFMutableArray>?
     private typealias Register = @convention(c) (MTDeviceRef?, MTContactCallbackFunction?) -> Void
     private typealias StartStop = @convention(c) (MTDeviceRef?, Int32) -> Void
@@ -52,5 +55,41 @@ final class Multitouch {
     private var retained: [AnyObject] = []
 
     var deviceCount: Int { devices.count }
+
+    // MARK: 트랙패드 연결·해제 감지 (매직 트랙패드를 나중에 연결해도 바로 인식)
+
+    private var notifyPort: IONotificationPortRef?
+    private var iterators: [io_iterator_t] = []
+    private var pending: DispatchWorkItem?
+
+    /// 트랙패드가 연결되거나 빠지면 잠시 뒤 다시 찾기
+    func watchDevices() {
+        guard notifyPort == nil, let port = IONotificationPortCreate(kIOMainPortDefault) else { return }
+        notifyPort = port
+        IONotificationPortSetDispatchQueue(port, .main)
+        let me = Unmanaged.passUnretained(self).toOpaque()
+        let callback: IOServiceMatchingCallback = { refcon, iterator in
+            // 알림을 다시 받으려면 목록을 끝까지 비워야 함
+            while case let o = IOIteratorNext(iterator), o != 0 { IOObjectRelease(o) }
+            guard let refcon else { return }
+            Unmanaged<Multitouch>.fromOpaque(refcon).takeUnretainedValue().scheduleRestart()
+        }
+        for type in [kIOFirstMatchNotification, kIOTerminatedNotification] {
+            var it: io_iterator_t = 0
+            IOServiceAddMatchingNotification(port, type, IOServiceMatching("AppleMultitouchDevice"), callback, me, &it)
+            while case let o = IOIteratorNext(it), o != 0 { IOObjectRelease(o) }   // 이미 있는 기기는 건너뜀
+            iterators.append(it)
+        }
+    }
+
+    private func scheduleRestart() {
+        pending?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.restart()
+            Log.write("트랙패드 연결 변경 → 다시 찾기")
+        }
+        pending = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: work)   // 드라이버가 준비될 시간
+    }
 }
 

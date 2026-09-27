@@ -11,10 +11,11 @@ enum Store {
     /// Pro 구매 페이지 (PayPal)
     static let checkoutURL: URL? = server.appendingPathComponent("buy")
     /// 기기 관리 · 코드 다시 받기 페이지
-    static let manageURL = server.appendingPathComponent("manage")
-    static let resendURL = server.appendingPathComponent("resend")
+    static var manageURL: URL { URL(string: "https://toktok.seoriarts.com/manage?lang=\(langCode)")! }
+    static var resendURL: URL { URL(string: "https://toktok.seoriarts.com/resend?lang=\(langCode)")! }
+    static var langCode: String { AppLanguage.shared.isKorean ? "ko" : "en" }
     /// 사용 설명서
-    static let guideURL = server.appendingPathComponent("guide")
+    static var guideURL: URL { server.appendingPathComponent(AppLanguage.shared.isKorean ? "guide" : "guide-en") }
     /// 구매 페이지 (언어에 맞게)
     static var buyPageURL: URL { URL(string: AppLanguage.shared.isKorean ? "https://toktok.seoriarts.com/buy?lang=ko#buy" : "https://toktok.seoriarts.com/en#buy")! }
     /// 개발자에게 커피 사주기
@@ -88,6 +89,7 @@ final class License: ObservableObject {
         var req = URLRequest(url: Store.server.appendingPathComponent("api/\(path)"))
         req.httpMethod = "POST"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(Store.langCode, forHTTPHeaderField: "Accept-Language")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         guard let (data, resp) = try? await URLSession.shared.data(for: req) else {
             throw ServerError(message: t("인터넷 연결을 확인하고 다시 시도해 주세요.", "Please check your internet connection and try again."))

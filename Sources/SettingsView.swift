@@ -44,6 +44,8 @@ struct SettingsView: View {
                 UpdateRow()
             }
 
+            TroubleshootSection()
+
             if Store.sellsPro { ProSection().id("pro") }
 
             if Store.tipURL != nil {
@@ -275,6 +277,57 @@ struct ProSection: View {
             catch { self.error = error.localizedDescription }
             busy = false
         }
+    }
+}
+
+/// 문제 해결: 트랙패드 다시 찾기, 디버그 로그
+struct TroubleshootSection: View {
+    @ObservedObject var language = AppLanguage.shared
+    @State private var debug = Log.enabled
+    @State private var count = Multitouch.current?.deviceCount ?? 0
+
+    var body: some View {
+        Section(t("문제 해결", "Troubleshooting")) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(t("트랙패드 \(count)개 연결됨", "\(count) trackpad(s) connected"))
+                    Text(t("매직 트랙패드를 연결하면 자동으로 찾아요. 안 되면 다시 찾기를 눌러 주세요.",
+                           "Magic Trackpad is detected automatically when connected. If not, click Rescan."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(t("다시 찾기", "Rescan")) {
+                    Multitouch.current?.restart()
+                    count = Multitouch.current?.deviceCount ?? 0
+                }
+            }
+            Toggle(isOn: Binding(get: { debug }, set: { on in
+                debug = on; Log.enabled = on; UserDefaults.standard.set(on, forKey: "debug")
+            })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(t("디버그 로그 기록", "Debug logging"))
+                    Text(t("제스처가 인식되지 않은 이유를 기록해요. 문의할 때 로그 파일을 함께 보내 주세요.",
+                           "Records why a gesture wasn’t recognized. Attach the log file when contacting support."))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            if debug {
+                HStack {
+                    Spacer()
+                    Button(t("로그 파일 보기", "Show log file")) {
+                        if FileManager.default.fileExists(atPath: Log.url.path) {
+                            NSWorkspace.shared.activateFileViewerSelecting([Log.url])
+                        } else {
+                            let a = NSAlert()
+                            a.messageText = t("아직 기록된 로그가 없어요", "No log yet")
+                            a.informativeText = t("제스처를 몇 번 해 본 뒤 다시 눌러 주세요.", "Try a few gestures, then click again.")
+                            a.runModal()
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear { count = Multitouch.current?.deviceCount ?? 0 }
     }
 }
 
