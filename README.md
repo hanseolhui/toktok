@@ -8,7 +8,7 @@
 ```
 
 Safari, 크롬, Finder, 설정 앱 등 ⌘[ / ⌘] 를 지원하는 곳이면 어디서나 동작해요.
-BetterTouchTool의 "TipTap" 제스처를 **무료·오픈소스**로, 딱 이것만 가볍게 만든 메뉴바 앱입니다.
+**무료·오픈소스**로, 딱 이 기능만 가볍게 담은 메뉴바 앱입니다.
 
 ## 🚀 설치
 
@@ -69,7 +69,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 
 ## 🔧 작동 원리
 
-macOS 내부의 `MultitouchSupport` 프레임워크로 손가락 좌표를 실시간으로 받아, "먼저 닿아 있던 손가락 옆에 짧게 톡 친 손가락"을 찾으면 ⌘[ / ⌘] 키를 보냅니다. BetterTouchTool, Jitouch 등도 같은 방식을 써요. Apple 비공개 프레임워크라 macOS 대규모 업데이트 때 동작이 바뀔 수 있어요.
+macOS 내부의 `MultitouchSupport` 프레임워크로 손가락 좌표를 실시간으로 받아, "먼저 닿아 있던 손가락 옆에 짧게 톡 친 손가락"을 찾으면 ⌘[ / ⌘] 키를 보냅니다. Apple 비공개 프레임워크라 macOS 대규모 업데이트 때 동작이 바뀔 수 있어요.
 
 소스는 Swift 파일 하나(`Sources/main.swift`)예요. 인식 기준은 파일 위쪽 `Tuning`에서 조정할 수 있어요.
 직접 빌드: `./build.sh` (결과: `build/TokTok.app`), 배포용 공증 릴리스: `./release.sh 버전`

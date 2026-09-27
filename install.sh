@@ -39,10 +39,14 @@ build_from_source() {
 
 if [ "${TOKTOK_BUILD:-0}" = "1" ]; then
   build_from_source
-elif curl -fsSL https://github.com/hanseolhui/toktok/releases/latest/download/TokTok.zip -o "$TMP/TokTok.zip" \
+elif TAG=$(curl -fsSL https://api.github.com/repos/hanseolhui/toktok/releases/latest 2>/dev/null \
+       | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -1); \
+     URL="https://github.com/hanseolhui/toktok/releases/latest/download/TokTok.zip"; \
+     [ -n "$TAG" ] && URL="https://github.com/hanseolhui/toktok/releases/download/$TAG/TokTok.zip"; \
+     curl -fsSL "$URL" -o "$TMP/TokTok.zip" \
      && mkdir -p "$TMP/out" && ditto -x -k "$TMP/TokTok.zip" "$TMP/out" \
      && spctl --assess --type execute "$TMP/out/TokTok.app" 2>/dev/null; then
-  ok "공증된 최신 릴리스 다운로드"
+  ok "공증된 최신 릴리스 다운로드 (${TAG:-latest})"
 else
   warn "릴리스를 받지 못해 소스에서 직접 빌드합니다."
   rm -rf "$TMP/out"; build_from_source

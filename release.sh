@@ -5,6 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 VERSION="${1:?버전을 입력하세요 (예: ./release.sh 0.1.0)}"
+echo "$VERSION" > VERSION
 DIST="dist"
 rm -rf "$DIST"; mkdir -p "$DIST"
 

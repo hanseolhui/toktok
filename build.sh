@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 OUT="${1:-build}"
 APP="$OUT/TokTok.app"
-VERSION="${VERSION:-0.1.0}"
+VERSION="${VERSION:-$(cat VERSION 2>/dev/null || echo 0.0.0)}"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
