@@ -547,6 +547,8 @@ struct FeedbackSection: View {
     @State private var email = ""
     @State private var status: String?
     @State private var busy = false
+    @State private var attachLog = true
+    private var hasLog: Bool { FileManager.default.fileExists(atPath: Log.url.path) }
 
     var body: some View {
         Section(t("💬 의견 · 아이디어 보내기", "💬 Send feedback or ideas")) {
@@ -566,9 +568,22 @@ struct FeedbackSection: View {
                 Button(busy ? t("보내는 중…", "Sending…") : t("보내기", "Send"), action: send)
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2 || !emailOK || busy)
             }
+            if hasLog {
+                Toggle(t("문제 해결용 로그 함께 보내기 (제스처 인식 기록만, 키 입력 X)", "Attach the debug log (gesture records only, no keystrokes)"), isOn: $attachLog)
+                    .font(.caption)
+            }
             if let status { Text(status).font(.caption).foregroundStyle(.secondary) }
             else if !email.isEmpty && !emailOK { Text(t("이메일 주소를 확인해 주세요", "Please check your email address")).font(.caption).foregroundStyle(.red) }
         }
+    }
+
+    /// 최근 로그 (마지막 50KB)
+    static func recentLog() -> String {
+        guard let h = try? FileHandle(forReadingFrom: Log.url) else { return "" }
+        defer { try? h.close() }
+        let end = (try? h.seekToEnd()) ?? 0
+        try? h.seek(toOffset: end > 50_000 ? end - 50_000 : 0)
+        return String(decoding: (try? h.readToEnd()) ?? Data(), as: UTF8.self)
     }
 
     private var emailOK: Bool { email.trimmingCharacters(in: .whitespaces).range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]+$"#, options: .regularExpression) != nil }
@@ -584,6 +599,7 @@ struct FeedbackSection: View {
                 "message": text, "email": email, "lang": Store.langCode,
                 "app": Updater.current, "os": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
                 "pro": License.shared.payload != nil ? "yes" : "no",
+                "log": attachLog && hasLog ? Self.recentLog() : "",
             ])
             let ok = ((try? await URLSession.shared.data(for: req))?.1 as? HTTPURLResponse)?.statusCode == 200
             status = ok ? t("고마워요! 잘 받았어요 🙏", "Thank you! We got it 🙏")
@@ -620,8 +636,8 @@ struct TroubleshootSection: View {
             })) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(t("디버그 로그 기록", "Debug logging"))
-                    Text(t("제스처가 인식되지 않은 이유를 기록해요. 문의할 때 로그 파일을 함께 보내 주세요.",
-                           "Records why a gesture wasn’t recognized. Attach the log file when contacting support."))
+                    Text(t("제스처가 인식되지 않은 이유를 기록해요. 아래 의견 보내기에서 로그가 자동으로 첨부돼요.",
+                           "Records why a gesture wasn’t recognized. It’s attached automatically when you send feedback below."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
