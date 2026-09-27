@@ -243,7 +243,7 @@ final class GestureDetector {
         let d = GestureDetector(); perDevice[key] = d
         return d
     }
-    static func resetDevices() { devicesLock.lock(); perDevice = [:]; devicesLock.unlock(); PointerLock.active = false }
+    static func resetDevices() { devicesLock.lock(); perDevice = [:]; devicesLock.unlock(); PointerLock.unlock() }
 
     /// 인식된 제스처 (콜백 스레드에서 호출됨)
     var onGesture: ((Gesture) -> Void)?
@@ -333,7 +333,7 @@ final class GestureDetector {
                 // 오른쪽 아래에서 쓸기(빠른 메모)가 켜져 있으면 그 모서리는 쓸기에 양보
                 if cfg.swipeIn, p.x > 1 - Tuning.cornerX, p.y < Tuning.cornerY { s.sliderCandidates = [] }
                 // 가장자리에 닿은 순간부터 포인터를 잠가 둠 (슬라이더가 아니면 바로 풂)
-                if !s.sliderCandidates.isEmpty { PointerLock.active = true }
+                if !s.sliderCandidates.isEmpty { PointerLock.lock() }
                 session = s
             }
             var anchors: [Int32: (x: Float, y: Float, startTime: Double)] = [:]
@@ -380,7 +380,7 @@ final class GestureDetector {
         guard var s = session, !s.sliderCandidates.isEmpty else { return }
         // 손가락이 더 닿으면 슬라이더가 아님
         guard s.fingerCount == 1, current.count == 1, let p = current.values.first else {
-            if current.count > 1 { s.sliderCandidates = []; PointerLock.active = false; session = s }
+            if current.count > 1 { s.sliderCandidates = []; PointerLock.unlock(); session = s }
             return
         }
         let mx = abs(p.x - s.firstX), my = abs(p.y - s.firstY)
@@ -390,7 +390,7 @@ final class GestureDetector {
             guard max(mx, my) >= Tuning.sliderHoldStart else { return }
             let vertical = my > mx
             guard let side = s.sliderCandidates.first(where: { $0.horizontal != vertical }) else {
-                s.sliderCandidates = []; PointerLock.active = false; session = s; return
+                s.sliderCandidates = []; PointerLock.unlock(); session = s; return
             }
             s.sliderSide = side
             s.sliderY = side.horizontal ? s.firstX : s.firstY
@@ -400,9 +400,10 @@ final class GestureDetector {
         // 쓰는 방향에서 옆으로 크게 벗어나면 슬라이더가 아님
         let across = side.horizontal ? my : mx
         guard across <= Tuning.sliderMaxSideMove else {
-            s.sliderCandidates = []; s.sliderSide = nil; PointerLock.active = false
+            s.sliderCandidates = []; s.sliderSide = nil; PointerLock.unlock()
             session = s; return
         }
+        PointerLock.hold()
         let value = side.horizontal ? p.x : p.y
         let step = side.horizontal ? Tuning.sliderStepX : Tuning.sliderStep
         var d = value - s.sliderY
@@ -468,7 +469,7 @@ final class GestureDetector {
 
     // 모든 손가락이 떨어진 뒤: 여러 손가락 탭, 모서리 톡, 안쪽으로 쓸기
     private func evaluateSession(_ s: Session, time: Double) {
-        PointerLock.active = false
+        PointerLock.unlock()
         guard !s.consumed else { return }
         let duration = time - s.startTime
         let n = s.fingerCount

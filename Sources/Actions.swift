@@ -6,7 +6,7 @@ import Cocoa
 enum PresetAction: String, CaseIterable, Codable, Identifiable {
     case back, forward, prevTab, nextTab
     case middleClick, closeTab, reopenTab, newTab
-    case windowLeft, windowRight, windowFill, fullScreen
+    case windowLeft, windowRight, windowFill, windowCenter, fullScreen
     case quarterTopLeft, quarterTopRight, quarterBottomLeft, quarterBottomRight, windowNextScreen
     case missionControl, appWindows, spaceLeft, spaceRight
     case reload, quickNote
@@ -33,7 +33,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .back, .forward, .reload: return .navigate
         case .prevTab, .nextTab, .middleClick, .closeTab, .reopenTab, .newTab: return .tabs
-        case .windowLeft, .windowRight, .windowFill, .fullScreen, .quarterTopLeft, .quarterTopRight,
+        case .windowLeft, .windowRight, .windowFill, .windowCenter, .fullScreen, .quarterTopLeft, .quarterTopRight,
              .quarterBottomLeft, .quarterBottomRight, .windowNextScreen: return .window
         case .missionControl, .appWindows, .spaceLeft, .spaceRight: return .screen
         case .quickNote, .copy, .paste, .screenshot, .save, .quitApp: return .etc
@@ -55,6 +55,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .windowLeft:     return t("창을 왼쪽 반으로", "Window to left half")
         case .windowRight:    return t("창을 오른쪽 반으로", "Window to right half")
         case .windowFill:     return t("창을 화면 가득", "Fill screen with window")
+        case .windowCenter:   return t("창을 가운데로 (작게)", "Center window (smaller)")
         case .fullScreen:     return t("전체 화면 켜기/끄기  ⌃⌘F", "Toggle full screen  ⌃⌘F")
         case .quarterTopLeft:     return t("창을 왼쪽 위 4분의 1로", "Window to top-left quarter")
         case .quarterTopRight:    return t("창을 오른쪽 위 4분의 1로", "Window to top-right quarter")
@@ -92,6 +93,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .windowLeft:     WindowTiler.tile(.left)
         case .windowRight:    WindowTiler.tile(.right)
         case .windowFill:     WindowTiler.tile(.fill)
+        case .windowCenter:   WindowTiler.tile(.center)
         case .fullScreen:     Keys.press(Keys.f, [.maskControl, .maskCommand])
         case .quarterTopLeft:     WindowTiler.tile(.topLeft)
         case .quarterTopRight:    WindowTiler.tile(.topRight)

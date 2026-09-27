@@ -3,7 +3,7 @@ import ApplicationServices
 
 /// 맨 앞 창을 화면 반 · 4분할 · 가득 · 다음 모니터로 (손쉬운 사용 API 로 직접 이동)
 enum WindowTiler {
-    enum Mode { case left, right, fill, topLeft, topRight, bottomLeft, bottomRight, nextScreen }
+    enum Mode { case left, right, fill, center, topLeft, topRight, bottomLeft, bottomRight, nextScreen }
 
     static func tile(_ mode: Mode) {
         guard let app = NSWorkspace.shared.frontmostApplication else { return }
@@ -29,6 +29,10 @@ enum WindowTiler {
         case .left:  target.size.width = halfW
         case .right: target.size.width = halfW; target.origin.x = area.maxX - halfW
         case .fill:  break
+        case .center:
+            // 가로 2/3 · 세로 3/4 크기로 화면 가운데
+            let w = (area.width * 2 / 3).rounded(), h = (area.height * 3 / 4).rounded()
+            target = CGRect(x: (area.midX - w / 2).rounded(), y: (area.midY - h / 2).rounded(), width: w, height: h)
         case .topLeft:     target.size = CGSize(width: halfW, height: halfH)
         case .topRight:    target = CGRect(x: area.maxX - halfW, y: area.minY, width: halfW, height: halfH)
         case .bottomLeft:  target = CGRect(x: area.minX, y: area.maxY - halfH, width: halfW, height: halfH)
