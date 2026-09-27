@@ -43,6 +43,11 @@ final class Settings: ObservableObject {
            let saved = try? JSONDecoder().decode([String: GestureSetting].self, from: data) {
             for (k, v) in saved { if let g = Gesture(rawValue: k) { gestures[g] = v } }
         }
+        // 한 번만: 기본값(빠른 메모)으로 켜 둔 쓸기는 새 메모로
+        if !UserDefaults.standard.bool(forKey: "migrated.newNote") {
+            if var sw = gestures[.swipeInBottomRight], sw.action == .preset(.quickNote) { sw.action = .preset(.newNote); update(.swipeInBottomRight, sw) }
+            UserDefaults.standard.set(true, forKey: "migrated.newNote")
+        }
     }
 
     func setting(_ g: Gesture) -> GestureSetting { gestures[g] ?? g.defaultSetting }

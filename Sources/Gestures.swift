@@ -116,7 +116,7 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
         case .cornerBottomLeft:  return .init(enabled: false, action: .preset(.missionControl))
         case .cornerBottomRight: return .init(enabled: false, action: .preset(.windowFill))
         case .edgeTopCenter:     return .init(enabled: false, action: .preset(.windowFill))
-        case .swipeInBottomRight: return .init(enabled: false, action: .preset(.quickNote))
+        case .swipeInBottomRight: return .init(enabled: false, action: .preset(.newNote))
         case .doubleTopLeft:     return .init(enabled: false, action: .preset(.quarterTopLeft))
         case .doubleTopRight:    return .init(enabled: false, action: .preset(.quarterTopRight))
         case .doubleBottomLeft:  return .init(enabled: false, action: .preset(.quarterBottomLeft))

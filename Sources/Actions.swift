@@ -9,7 +9,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
     case windowLeft, windowRight, windowFill, windowCenter, fullScreen
     case quarterTopLeft, quarterTopRight, quarterBottomLeft, quarterBottomRight, windowNextScreen
     case missionControl, appWindows, spaceLeft, spaceRight
-    case reload, quickNote
+    case reload, quickNote, newNote
     case copy, paste, screenshot, save, quitApp, minimize, playPause, nextTrack, prevTrack
 
     var id: String { rawValue }
@@ -36,7 +36,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .windowLeft, .windowRight, .windowFill, .windowCenter, .fullScreen, .quarterTopLeft, .quarterTopRight,
              .quarterBottomLeft, .quarterBottomRight, .windowNextScreen: return .window
         case .missionControl, .appWindows, .spaceLeft, .spaceRight: return .screen
-        case .quickNote, .copy, .paste, .screenshot, .save, .quitApp: return .etc
+        case .quickNote, .newNote, .copy, .paste, .screenshot, .save, .quitApp: return .etc
         case .minimize: return .window
         case .playPause, .nextTrack, .prevTrack: return .media
         }
@@ -65,7 +65,8 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .spaceLeft:          return t("왼쪽 데스크톱으로  ⌃←", "Desktop to the left  ⌃←")
         case .spaceRight:         return t("오른쪽 데스크톱으로  ⌃→", "Desktop to the right  ⌃→")
         case .reload:             return t("새로고침  ⌘R", "Reload  ⌘R")
-        case .quickNote:          return t("빠른 메모  fn Q", "Quick Note  fn Q")
+        case .quickNote:          return t("빠른 메모 (마지막 메모)  fn Q", "Quick Note (last note)  fn Q")
+        case .newNote:            return t("새 메모 작성 (메모 앱)", "New note (Notes app)")
         case .copy:               return t("복사  ⌘C", "Copy  ⌘C")
         case .paste:              return t("붙여넣기  ⌘V", "Paste  ⌘V")
         case .screenshot:         return t("영역 스크린샷 → 클립보드  ⌃⇧⌘4", "Area screenshot to clipboard  ⌃⇧⌘4")
@@ -104,6 +105,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .spaceRight:         Keys.press(Keys.rightArrow, [.maskControl, .maskSecondaryFn])
         case .reload:             Keys.press(Keys.r, [.maskCommand])
         case .quickNote:          Keys.press(Keys.q, [.maskSecondaryFn])
+        case .newNote:            Self.openNewNote()
         case .copy:               Keys.press(Keys.c, [.maskCommand])
         case .paste:              Keys.press(Keys.v, [.maskCommand])
         case .screenshot:         Keys.press(Keys.four, [.maskControl, .maskShift, .maskCommand])
@@ -115,6 +117,22 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .prevTrack:          Keys.mediaKey(Keys.previous)
         case .missionControl: Keys.press(Keys.upArrow, [.maskControl, .maskSecondaryFn])
         case .appWindows:     Keys.press(Keys.downArrow, [.maskControl, .maskSecondaryFn])
+        }
+    }
+}
+
+extension PresetAction {
+    /// 메모 앱을 앞으로 띄우고 새 메모 (⌘N)
+    static func openNewNote() {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Notes") else { return }
+        let config = NSWorkspace.OpenConfiguration(); config.activates = true
+        NSWorkspace.shared.openApplication(at: url, configuration: config) { app, _ in
+            // 창이 뜰 시간을 두고 새 메모
+            DispatchQueue.main.asyncAfter(deadline: .now() + (app?.isFinishedLaunching == true ? 0.25 : 0.8)) {
+                if NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.Notes" {
+                    Keys.press(Keys.n, [.maskCommand])
+                }
+            }
         }
     }
 }
@@ -183,6 +201,7 @@ enum Keys {
     static let tab: CGKeyCode = 0x30, w: CGKeyCode = 0x0D, t: CGKeyCode = 0x11, f: CGKeyCode = 0x03
     static let r: CGKeyCode = 0x0F, q: CGKeyCode = 0x0C, equal: CGKeyCode = 0x18, minus: CGKeyCode = 0x1B
     static let command: CGKeyCode = 0x37
+    static let n: CGKeyCode = 0x2D
     static let c: CGKeyCode = 0x08, v: CGKeyCode = 0x09, s: CGKeyCode = 0x01, m: CGKeyCode = 0x2E, four: CGKeyCode = 0x15
     static let play: Int32 = 16, next: Int32 = 17, previous: Int32 = 18
     /// 미디어 키 (NX_KEYTYPE_*)
