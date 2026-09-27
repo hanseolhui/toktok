@@ -62,7 +62,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 
 ## ⭐ 톡톡 Pro — 평생 ₩4,900 (해외 US$3.99) · 맥 3대
 
-무료로도 제스처마다 **기본 제공 동작 41가지**를 자유롭게 고를 수 있어요.
+무료로도 제스처마다 **기본 제공 동작 42가지**를 자유롭게 고를 수 있어요.
 Pro는 **투탭 제스처**, 모든 제스처에 **나만의 단축키**(여러 키 순서대로도), 슬라이더 가로 스크롤·확대/축소, 스와이프 앱 전환, 앱별 끄기를 더해요.
 
 1. [toktok.seoriarts.com](https://toktok.seoriarts.com/#buy) 에서 구매 (한국 카드 · PayPal)
