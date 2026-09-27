@@ -22,8 +22,8 @@ struct SettingsView: View {
 
             Section(t("가장자리 슬라이더", "Edge sliders")) {
                 ForEach(EdgeSide.allCases) { SliderRow(side: $0) }
-                Text(t("트랙패드 왼쪽·오른쪽 끝에 손가락을 대고 위아래로 쓸어요. 가로 스크롤·확대/축소·단축키는 Pro.",
-                       "Rest a finger on the far left/right edge and slide up or down. Horizontal scroll, zoom and shortcuts are Pro."))
+                Text(t("트랙패드 끝에 손가락을 대고 쓸어요. 왼쪽·오른쪽 끝은 위아래로, 위쪽·아래쪽 끝은 좌우로. 가로 스크롤·확대/축소·단축키는 Pro.",
+                       "Rest a finger on an edge and slide: left/right edges up and down, top/bottom edges sideways. Horizontal scroll, zoom and shortcuts are Pro."))
                     .font(.caption).foregroundStyle(.secondary)
             }
 

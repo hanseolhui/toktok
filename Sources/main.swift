@@ -51,8 +51,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             DispatchQueue.main.async { Settings.shared.handleAppSwitch(step) }
         }
         Settings.shared.syncDetector()
-        // 슬라이더가 포인터를 제자리로 되돌린 뒤에도 마우스가 바로 움직이게
-        CGEventSource(stateID: .combinedSessionState)?.localEventsSuppressionInterval = 0
+        PointerLock.install()
+        // 손쉬운 사용 권한을 나중에 허용해도 포인터 잠금이 켜지게
+        if !PointerLock.installed {
+            Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { timer in
+                PointerLock.install()
+                if PointerLock.installed { timer.invalidate() }
+            }
+        }
 
         // 타자 중 잘못 실행 방지: 다른 앱에서 키를 누른 시각 기록 (톡톡이 보낸 키는 제외)
         let me = Int64(ProcessInfo.processInfo.processIdentifier)
