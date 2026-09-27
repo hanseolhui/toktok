@@ -7,6 +7,7 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
     case twoFixTapLeft, twoFixTapRight
     case threeFingerTap, fourFingerTap
     case cornerTopLeft, cornerTopRight, cornerBottomLeft, cornerBottomRight
+    case edgeTopCenter
 
     var id: String { rawValue }
 
@@ -22,6 +23,7 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
         case .cornerTopRight:    return t("오른쪽 위 모서리 톡", "Top-right corner tap")
         case .cornerBottomLeft:  return t("왼쪽 아래 모서리 톡", "Bottom-left corner tap")
         case .cornerBottomRight: return t("오른쪽 아래 모서리 톡", "Bottom-right corner tap")
+        case .edgeTopCenter:     return t("위쪽 가운데 톡", "Top-center tap")
         }
     }
 
@@ -35,6 +37,8 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
         case .fourFingerTap:  return t("네 손가락으로 동시에 톡", "Tap with four fingers at once")
         case .cornerTopLeft, .cornerTopRight, .cornerBottomLeft, .cornerBottomRight:
             return t("한 손가락으로 모서리를 톡 (탭하여 클릭을 켜 두면 클릭도 함께 돼요)", "Tap a corner with one finger (also clicks if Tap to click is on)")
+        case .edgeTopCenter:
+            return t("한 손가락으로 트랙패드 위쪽 가운데를 톡", "Tap the top-center edge of the trackpad with one finger")
         }
     }
 
@@ -44,7 +48,7 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
             switch self {
             case .tipTap: return t("대고 톡", "Rest & tap")
             case .tap:    return t("여러 손가락 탭", "Multi-finger tap")
-            case .corner: return t("모서리 톡", "Corner tap")
+            case .corner: return t("모서리·가장자리 톡", "Corner & edge tap")
             }
         }
     }
@@ -69,6 +73,7 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
         case .cornerTopRight:    return .init(enabled: false, action: .preset(.windowRight))
         case .cornerBottomLeft:  return .init(enabled: false, action: .preset(.missionControl))
         case .cornerBottomRight: return .init(enabled: false, action: .preset(.windowFill))
+        case .edgeTopCenter:     return .init(enabled: false, action: .preset(.windowFill))
         }
     }
 }
@@ -92,6 +97,8 @@ enum Tuning {
     /// 모서리로 볼 범위 (가로, 세로 비율)
     static let cornerX: Float = 0.15
     static let cornerY: Float = 0.2
+    /// 위쪽 가운데로 볼 가로 범위 (가운데에서 좌우로)
+    static let edgeCenterHalfWidth: Float = 0.15
     /// 연속 입력 사이 최소 간격(초)
     static let minInterval = 0.08
 }
@@ -223,6 +230,8 @@ final class GestureDetector {
             case (_, true, true, _):  fire(.cornerTopRight, time: time)
             case (true, _, _, true):  fire(.cornerBottomLeft, time: time)
             case (_, true, _, true):  fire(.cornerBottomRight, time: time)
+            case (false, false, true, _) where abs(s.firstX - 0.5) <= Tuning.edgeCenterHalfWidth:
+                fire(.edgeTopCenter, time: time)
             default: break
             }
         }

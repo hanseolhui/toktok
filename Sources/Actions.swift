@@ -6,7 +6,7 @@ import Cocoa
 enum PresetAction: String, CaseIterable, Codable, Identifiable {
     case back, forward, prevTab, nextTab
     case middleClick, closeTab, reopenTab, newTab
-    case windowLeft, windowRight, windowFill
+    case windowLeft, windowRight, windowFill, fullScreen
     case missionControl, appWindows
 
     var id: String { rawValue }
@@ -24,6 +24,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .windowLeft:     return t("창을 왼쪽 반으로", "Window to left half")
         case .windowRight:    return t("창을 오른쪽 반으로", "Window to right half")
         case .windowFill:     return t("창을 화면 가득", "Fill screen with window")
+        case .fullScreen:     return t("전체 화면 켜기/끄기  ⌃⌘F", "Toggle full screen  ⌃⌘F")
         case .missionControl: return "Mission Control"
         case .appWindows:     return t("앱 윈도우 보기", "App windows")
         }
@@ -42,6 +43,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .windowLeft:     WindowTiler.tile(.left)
         case .windowRight:    WindowTiler.tile(.right)
         case .windowFill:     WindowTiler.tile(.fill)
+        case .fullScreen:     Keys.press(Keys.f, [.maskControl, .maskCommand])
         case .missionControl: Keys.press(Keys.upArrow, [.maskControl, .maskSecondaryFn])
         case .appWindows:     Keys.press(Keys.downArrow, [.maskControl, .maskSecondaryFn])
         }

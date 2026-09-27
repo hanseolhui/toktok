@@ -45,6 +45,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 | 세 손가락 탭 | 세 손가락으로 동시에 톡 | 가운데 클릭 (링크를 새 탭으로) | ✅ |
 | 네 손가락 탭 | 네 손가락으로 동시에 톡 | 탭·창 닫기 ⌘W | |
 | 모서리 톡 (4곳) | 한 손가락으로 모서리를 톡 | 창 왼쪽 반 · 오른쪽 반 · Mission Control · 창 가득 | |
+| 위쪽 가운데 톡 | 한 손가락으로 위쪽 가운데를 톡 | 창 가득 | |
 
 - 대고 있는 손가락을 떼지 않고 계속 톡톡 치면 여러 번 실행돼요
 - 두 손가락 탭(우클릭), 스크롤, 드래그와는 헷갈리지 않게 걸러요
@@ -54,7 +55,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 
 ## ⭐ 톡톡 Pro — 평생 ₩4,900 (해외 US$3.99) · 맥 3대
 
-무료로도 제스처마다 **기본 제공 동작 13가지**를 자유롭게 고를 수 있어요.
+무료로도 제스처마다 **기본 제공 동작 14가지**를 자유롭게 고를 수 있어요.
 Pro는 여기에 없는 **나만의 단축키를 직접 녹화**해서 연결해요. 여러 키를 순서대로 실행할 수도 있어요 (⌘A → ⌘C).
 
 1. [toktok.seoriarts.com](https://toktok.seoriarts.com/#buy) 에서 구매 (한국 카드 · PayPal)
