@@ -2,6 +2,12 @@ import Foundation
 import AppKit
 import ServiceManagement
 
+/// 앱별 동작: 그 앱에서는 끄기 / 다른 동작
+enum AppOverride: Codable, Equatable {
+    case off
+    case action(Action)
+}
+
 struct GestureSetting: Codable, Equatable {
     var enabled: Bool
     var action: Action
@@ -23,6 +29,8 @@ final class Settings: ObservableObject {
     @Published var typingGuard: Bool { didSet { UserDefaults.standard.set(typingGuard, forKey: "typingGuard") } }
     /// 마지막으로 키보드를 누른 때 (다른 앱에서, 메인 스레드)
     var lastKeyTime = Date.distantPast
+    /// 앱별 동작 (번들 ID → 제스처 → 끄기/동작, Pro)
+    @Published private(set) var appOverrides: [String: [Gesture: AppOverride]] = [:]
     /// 톡톡을 끌 앱 (번들 ID, Pro)
     @Published var excludedApps: [String] { didSet { UserDefaults.standard.set(excludedApps, forKey: "excludedApps") } }
 
@@ -32,6 +40,12 @@ final class Settings: ObservableObject {
         enabled = UserDefaults.standard.bool(forKey: "enabled")
         appSwitch = UserDefaults.standard.bool(forKey: "appSwitch")
         excludedApps = UserDefaults.standard.stringArray(forKey: "excludedApps") ?? []
+        if let data = UserDefaults.standard.data(forKey: "appOverrides.v1"),
+           let saved = try? JSONDecoder().decode([String: [String: AppOverride]].self, from: data) {
+            for (app, m) in saved {
+                appOverrides[app] = Dictionary(uniqueKeysWithValues: m.compactMap { k, v in Gesture(rawValue: k).map { ($0, v) } })
+            }
+        }
         if let data = UserDefaults.standard.data(forKey: "sliders.v1"),
            let saved = try? JSONDecoder().decode([String: SliderSetting].self, from: data) {
             for (k, v) in saved { if let e = EdgeSide(rawValue: k) { sliders[e] = v } }
@@ -57,15 +71,35 @@ final class Settings: ObservableObject {
         syncDetector()
     }
 
+    // MARK: 앱별 동작
+
+    var overrideApps: [String] { appOverrides.keys.sorted { ExcludedAppsSection.name($0).localizedCaseInsensitiveCompare(ExcludedAppsSection.name($1)) == .orderedAscending } }
+    func override(_ app: String, _ g: Gesture) -> AppOverride? { appOverrides[app]?[g] }
+    func addOverrideApp(_ app: String) { if appOverrides[app] == nil { appOverrides[app] = [:]; saveOverrides() } }
+    func removeOverrideApp(_ app: String) { appOverrides[app] = nil; saveOverrides() }
+    func setOverride(_ app: String, _ g: Gesture, _ o: AppOverride?) {
+        var m = appOverrides[app] ?? [:]; m[g] = o; appOverrides[app] = m; saveOverrides()
+    }
+    private func saveOverrides() {
+        let raw = appOverrides.mapValues { m in Dictionary(uniqueKeysWithValues: m.map { ($0.key.rawValue, $0.value) }) }
+        if let data = try? JSONEncoder().encode(raw) { UserDefaults.standard.set(data, forKey: "appOverrides.v1") }
+        syncDetector()
+    }
+
+    /// 전체 설정에서 켜져 있거나, 어떤 앱에서라도 동작을 지정한 제스처
+    private func activeAnywhere(_ g: Gesture, pro: Bool) -> Bool {
+        setting(g).enabled || (pro && appOverrides.values.contains { if case .action = $0[g] { return true }; return false })
+    }
+
     /// 인식기에 켜진 추가 제스처 알려 주기 (Pro 전용은 Pro 일 때만)
     func syncDetector() {
         let pro = License.shared.isPro
         var c = GestureDetector.Config()
-        c.doubleTaps = pro ? Set(Gesture.allCases.filter { $0.group == .double && setting($0).enabled }) : []
+        c.doubleTaps = pro ? Set(Gesture.allCases.filter { $0.group == .double && activeAnywhere($0, pro: pro) }) : []
         c.sliders = Set(EdgeSide.allCases.filter { slider($0).enabled })
-        c.swipeIn = setting(.swipeInBottomRight).enabled
+        c.swipeIn = activeAnywhere(.swipeInBottomRight, pro: pro)
         c.appSwitch = pro && appSwitch
-        c.titlebar = pro && Gesture.allCases.contains { $0.group == .titlebar && setting($0).enabled }
+        c.titlebar = pro && Gesture.allCases.contains { $0.group == .titlebar && activeAnywhere($0, pro: pro) }
         GestureDetector.shared.config = c
     }
 
@@ -120,8 +154,16 @@ final class Settings: ObservableObject {
     /// 제스처가 인식되면 (메인 스레드에서) 설정에 따라 실행
     func handle(_ g: Gesture) {
         guard enabled, !pausedForFrontApp else { return }
-        let s = setting(g)
-        guard s.enabled, !g.isPro || License.shared.isPro else { return }
+        let pro = License.shared.isPro
+        var s = setting(g)
+        // 앱별 동작 (Pro): 맨 앞 앱에 지정한 게 있으면 그걸로
+        if pro, let app = NSWorkspace.shared.frontmostApplication?.bundleIdentifier, let o = appOverrides[app]?[g] {
+            switch o {
+            case .off: return
+            case .action(let a): s = GestureSetting(enabled: true, action: a)
+            }
+        }
+        guard s.enabled, !g.isPro || pro else { return }
         // 기본 제공 동작은 누구나, 직접 입력 단축키는 Pro 만 (아니면 기본 동작)
         // 제목 줄 제스처: 포인터가 창 제목 줄에 있을 때만, 그 창을 앞으로 가져온 뒤 실행
         if g.group == .titlebar {

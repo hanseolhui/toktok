@@ -135,6 +135,20 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
     }
 }
 
+extension Action {
+    /// 앱 고르기 창 (응용 프로그램 폴더에서)
+    static func pickApp() -> Action? {
+        let panel = NSOpenPanel()
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        panel.allowedContentTypes = [.application]
+        panel.allowsMultipleSelection = false
+        panel.prompt = t("선택", "Choose")
+        NSApp.activate(ignoringOtherApps: true)
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        return .launchApp(url.path)
+    }
+}
+
 extension PresetAction {
     /// 메모 앱을 앞으로 띄우고 새 메모 (⌘N)
     static func openNewNote() {
@@ -181,6 +195,8 @@ enum Action: Codable, Equatable {
     case shortcut(Shortcut)
     /// 여러 단축키를 순서대로 (예: ⌘A → ⌘C)
     case sequence([Shortcut])
+    /// 앱 실행 (앱 경로)
+    case launchApp(String)
 
     /// 녹화한 단축키 목록으로 만들기 (하나면 단축키, 여러 개면 순서대로)
     static func keys(_ list: [Shortcut]) -> Action {
@@ -191,6 +207,8 @@ enum Action: Codable, Equatable {
         switch self {
         case .preset(let p):    return p.title
         case .shortcut(let s):  return t("단축키  ", "Shortcut  ") + s.display
+        case .launchApp(let path):
+            return t("앱 실행  ", "Open app  ") + FileManager.default.displayName(atPath: path).replacingOccurrences(of: ".app", with: "")
         case .sequence(let l):  return t("단축키  ", "Shortcut  ") + l.map(\.display).joined(separator: " → ")
         }
     }
@@ -199,6 +217,9 @@ enum Action: Codable, Equatable {
         switch self {
         case .preset(let p):   p.perform()
         case .shortcut(let s): s.perform()
+        case .launchApp(let path):
+            let config = NSWorkspace.OpenConfiguration(); config.activates = true
+            NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: path), configuration: config)
         case .sequence(let l):
             // 앱이 앞의 키를 처리할 틈을 두고 차례로
             for (i, s) in l.enumerated() {

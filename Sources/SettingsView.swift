@@ -73,6 +73,7 @@ struct SettingsView: View {
                        "Overlaps with three-finger 'Swipe between full-screen apps'. See Help → System settings check."))
                     .font(.caption).foregroundStyle(.secondary)
             }
+            AppOverridesSection()
             ExcludedAppsSection()
         }
         .formStyle(.grouped)
@@ -246,8 +247,10 @@ struct GestureRow: View {
                 Divider()
                 if license.isPro {
                     Button(t("직접 입력 (단축키 녹화)…", "Custom (record shortcut)…")) { recording = true }
+                    Button(t("앱 실행…", "Open app…")) { if let a = Action.pickApp() { settings.setAction(gesture, a) } }
                 } else {
                     Button(t("🔒 직접 입력 (단축키 녹화) — Pro", "🔒 Custom (record shortcut) — Pro")) { license.openCheckout() }
+                    Button(t("🔒 앱 실행 — Pro", "🔒 Open app — Pro")) { license.openCheckout() }
                 }
             }
             .frame(width: 230)
@@ -485,6 +488,104 @@ struct SliderRecorder: View {
                 ShortcutRecorder { keys in if let keys { up = keys } else { done(nil, nil) } }
             } else {
                 ShortcutRecorder { keys in done(up, keys) }.id("down")
+            }
+        }
+    }
+}
+
+/// 앱별 동작 (Pro): 특정 앱에서만 제스처를 다른 동작으로 · 끄기
+struct AppOverridesSection: View {
+    @ObservedObject var settings = Settings.shared
+    @ObservedObject var license = License.shared
+    @ObservedObject var language = AppLanguage.shared
+
+    var body: some View {
+        Section {
+            ForEach(settings.overrideApps, id: \.self) { app in
+                DisclosureGroup {
+                    ForEach(Gesture.allCases) { g in OverrideRow(app: app, gesture: g) }
+                    HStack {
+                        Spacer()
+                        Button(t("이 앱 빼기", "Remove this app"), role: .destructive) { settings.removeOverrideApp(app) }
+                    }
+                } label: {
+                    HStack {
+                        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app) {
+                            Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 18, height: 18)
+                        }
+                        Text(ExcludedAppsSection.name(app))
+                        let n = settings.appOverrides[app]?.count ?? 0
+                        if n > 0 { Text(t("\(n)개 바꿈", "\(n) changed")).font(.caption).foregroundStyle(.secondary) }
+                    }
+                }
+            }
+            HStack {
+                Text(t("앱을 추가하면 그 앱이 맨 앞에 있을 때만 다른 동작을 해요", "Add an app to use different actions only while it’s in front"))
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if license.isPro {
+                    Menu(t("앱 추가", "Add app")) {
+                        ForEach(ExcludedAppsSection.runningApps(excluding: settings.overrideApps), id: \.self) { id in
+                            Button(ExcludedAppsSection.name(id)) { settings.addOverrideApp(id) }
+                        }
+                        Divider()
+                        Button(t("다른 앱 고르기…", "Choose another app…")) {
+                            if case .launchApp(let path)? = Action.pickApp(), let id = Bundle(path: path)?.bundleIdentifier {
+                                settings.addOverrideApp(id)
+                            }
+                        }
+                    }
+                    .frame(width: 120)
+                } else {
+                    Button(t("🔒 Pro", "🔒 Pro")) { license.openCheckout() }
+                }
+            }
+        } header: {
+            Text(t("⭐ 앱별 동작 (Pro)", "⭐ Per-app actions (Pro)"))
+        }
+    }
+}
+
+/// 앱별 동작 한 줄: 기본 따르기 / 끄기 / 다른 동작
+struct OverrideRow: View {
+    let app: String
+    let gesture: Gesture
+    @ObservedObject var settings = Settings.shared
+    @State private var recording = false
+
+    private var current: String {
+        switch settings.override(app, gesture) {
+        case nil:              return t("기본 따르기", "Use default") + " · " + (settings.setting(gesture).enabled ? settings.setting(gesture).action.title : t("꺼짐", "off"))
+        case .off?:            return t("이 앱에서는 끄기", "Off in this app")
+        case .action(let a)?:  return a.title
+        }
+    }
+
+    var body: some View {
+        HStack {
+            Text(gesture.title).font(.callout)
+            Spacer()
+            Menu(current) {
+                Button(t("기본 따르기", "Use default")) { settings.setOverride(app, gesture, nil) }
+                Button(t("이 앱에서는 끄기", "Off in this app")) { settings.setOverride(app, gesture, .off) }
+                Divider()
+                ForEach(PresetAction.Category.allCases, id: \.self) { c in
+                    Section(c.title) {
+                        ForEach(PresetAction.allCases.filter { $0.category == c }) { p in
+                            Button(p.title) { settings.setOverride(app, gesture, .action(.preset(p))) }
+                        }
+                    }
+                }
+                Divider()
+                Button(t("직접 입력 (단축키 녹화)…", "Custom (record shortcut)…")) { recording = true }
+                Button(t("앱 실행…", "Open app…")) { if let a = Action.pickApp() { settings.setOverride(app, gesture, .action(a)) } }
+            }
+            .frame(width: 240)
+            .popover(isPresented: $recording) {
+                ShortcutRecorder { keys in
+                    if let keys, !keys.isEmpty { settings.setOverride(app, gesture, .action(.keys(keys))) }
+                    recording = false
+                }
             }
         }
     }
