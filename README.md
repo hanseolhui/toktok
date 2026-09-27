@@ -42,7 +42,7 @@ trackpads.restart()
 trackpads.watchDevices()
 ```
 
-`Tuning` exposes every threshold (tap duration, movement tolerance, corner size…).
+Keep the `Multitouch` instance alive (e.g. as a property) while you want gestures. `Tuning` exposes every threshold (tap duration, movement tolerance, corner size…).
 The TokTok app adds the actions, settings UI and Pro features (double taps, title-bar gestures, custom shortcuts, per-app actions) on top — those parts are not open source.
 
 ⭐ If this is useful, a star helps a lot!

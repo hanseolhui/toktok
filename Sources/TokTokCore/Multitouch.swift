@@ -7,6 +7,9 @@ import CMultitouch
 ///
 /// Also watches IOKit for trackpads being connected or removed (e.g. a Magic Trackpad over
 /// Bluetooth) and rescans automatically. Magic Mouse surfaces are ignored.
+///
+/// Keep a strong reference to the instance for as long as you want gestures (e.g. a property
+/// on your app delegate); touches stop when it is deallocated.
 public final class Multitouch {
     private typealias CreateList = @convention(c) () -> Unmanaged<CFMutableArray>?
     private typealias Register = @convention(c) (MTDeviceRef?, MTContactCallbackFunction?) -> Void
@@ -75,11 +78,19 @@ public final class Multitouch {
         return family == 112 || family == 113
     }
 
+    deinit {
+        for d in devices { unregister(d, Multitouch.callback); stop(d) }
+        for it in iterators { IOObjectRelease(it) }
+        if let notifyPort { IONotificationPortDestroy(notifyPort) }
+        pending?.cancel(); retry?.cancel()
+    }
+
     // MARK: Hot-plug
 
     private var notifyPort: IONotificationPortRef?
     private var iterators: [io_iterator_t] = []
     private var pending: DispatchWorkItem?
+    private var retry: DispatchWorkItem?
 
     /// Rescan shortly after a multitouch device is connected or removed.
     public func watchDevices() {
@@ -101,11 +112,12 @@ public final class Multitouch {
     }
 
     private func scheduleRestart() {
-        pending?.cancel()
+        pending?.cancel(); retry?.cancel()
         let work = DispatchWorkItem { [weak self] in self?.restart() }
-        pending = work
+        let again = DispatchWorkItem { [weak self] in self?.restart() }
+        pending = work; retry = again
         // Give the driver a moment; Bluetooth trackpads can be slow to become ready.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: work)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) { [weak self] in self?.restart() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5, execute: again)
     }
 }

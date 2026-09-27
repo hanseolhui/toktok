@@ -61,11 +61,26 @@ public enum Tuning {
 /// Turns raw multitouch frames from one trackpad into `GestureEvent`s.
 /// One instance per device so fingers on different trackpads never mix.
 public final class GestureDetector {
-    // Shared configuration
-    static var handler: ((GestureEvent) -> Void)?
-    /// Edges that act as sliders (empty = off). Set before touches arrive.
-    public static var sliders: Set<EdgeSide> = []
-    public static var swipeInEnabled = true
+    // Shared configuration — read by the multitouch thread, written by the app: guarded by a lock.
+    private static let configLock = NSLock()
+    private static var _handler: ((GestureEvent) -> Void)?
+    private static var _sliders: Set<EdgeSide> = []
+    private static var _swipeIn = true
+    private static func locked<T>(_ body: () -> T) -> T { configLock.lock(); defer { configLock.unlock() }; return body() }
+
+    static var handler: ((GestureEvent) -> Void)? {
+        get { locked { _handler } }
+        set { locked { _handler = newValue } }
+    }
+    /// Edges that act as sliders (empty = off).
+    public static var sliders: Set<EdgeSide> {
+        get { locked { _sliders } }
+        set { locked { _sliders = newValue } }
+    }
+    public static var swipeInEnabled: Bool {
+        get { locked { _swipeIn } }
+        set { locked { _swipeIn = newValue } }
+    }
 
     private static let lock = NSLock()
     private static var perDevice: [Int: GestureDetector] = [:]
@@ -104,8 +119,11 @@ public final class GestureDetector {
     private var fingers: [Int32: Finger] = [:]
     private var session: Session?
     private var lastFire = 0.0
+    /// Handler snapshot for the current frame.
+    private var emit: ((GestureEvent) -> Void)?
 
     func process(_ touches: UnsafeMutablePointer<MTTouch>?, count: Int, time: Double) {
+        emit = Self.handler
         var current: [Int32: (x: Float, y: Float)] = [:]
         if let touches {
             for i in 0..<count {
@@ -194,7 +212,7 @@ public final class GestureDetector {
             s.sliderPos += up ? step : -step
             d = value - s.sliderPos
             s.consumed = true
-            Self.handler?(.slider(side, up: up))
+            emit?(.slider(side, up: up))
         }
         session = s
     }
@@ -256,6 +274,6 @@ public final class GestureDetector {
     private func fire(_ g: Gesture, time: Double) {
         guard time - lastFire >= Tuning.minInterval else { return }
         lastFire = time
-        Self.handler?(.gesture(g))
+        emit?(.gesture(g))
     }
 }
