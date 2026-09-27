@@ -1,3 +1,54 @@
+<p align="center"><img src="docs/cover.png" width="640" alt="TokTok"></p>
+
+# 👆 TokTok (톡톡) — trackpad tap gestures for Mac
+
+**Rest a finger on your trackpad and tap next to it.** Back/forward, tab switching, window snapping from the corners, volume & brightness sliders on the edges — just check a box and pick an action.
+
+- 🌐 **Website & animated demos:** https://toktok.seoriarts.com/en
+- ⬇️ **Download (notarized):** [latest release](https://github.com/hanseolhui/toktok/releases/latest) · `brew install --cask hanseolhui/tap/toktok`
+- 🧩 **Open-source gesture engine:** [`TokTokCore`](#-open-source-gesture-engine-toktokcore) (MIT) — the recognizer behind TokTok's free gestures
+
+---
+
+## 🧩 Open-source gesture engine (TokTokCore)
+
+A tiny Swift package that reads raw finger positions from every trackpad (via the private `MultitouchSupport.framework`, loaded at runtime) and recognizes:
+
+| Gesture | How |
+|---|---|
+| `tipTapLeft` / `tipTapRight` | rest one finger, tap to its left / right |
+| `twoFixTap{Left,Right,Middle}` · `threeFixTap{Left,Right}` | rest 2–3 fingers, tap beside or between them |
+| `threeFingerTap` · `fourFingerTap` · `fiveFingerTap` | tap with several fingers at once |
+| `corner{TopLeft,TopRight,BottomLeft,BottomRight}` · `edgeTopCenter` | one-finger tap in a corner / top-center |
+| `swipeInBottomRight` | swipe from the bottom-right corner toward the center |
+| `.slider(edge, up:)` | slide along the left/right (vertical) or top/bottom (horizontal) edge |
+
+It keeps one detector per trackpad (fingers on two trackpads never mix), separates rest-and-tap from a normal two-finger tap (right click), ignores Magic Mouse surfaces, and rescans when a Magic Trackpad is connected.
+
+```bash
+git clone https://github.com/hanseolhui/toktok && cd toktok
+swift run toktok-demo      # prints gestures as you tap
+```
+
+```swift
+import TokTokCore
+
+let trackpads = Multitouch()!
+GestureDetector.sliders = [.right]
+trackpads.onEvent = { event in
+    if case .gesture(.tipTapLeft) = event { print("back!") }
+}
+trackpads.restart()
+trackpads.watchDevices()
+```
+
+`Tuning` exposes every threshold (tap duration, movement tolerance, corner size…).
+The TokTok app adds the actions, settings UI and Pro features (double taps, title-bar gestures, custom shortcuts, per-app actions) on top — those parts are not open source.
+
+⭐ If this is useful, a star helps a lot!
+
+---
+
 # 👆 톡톡 (TokTok)
 
 **맥 트랙패드에 손가락을 대고, 옆 손가락으로 톡 — 뒤로 가기 / 앞으로 가기.**
@@ -34,7 +85,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 
 ## 🖐 제스처
 
-메뉴바 V 아이콘 → **설정…** 에서 쓸 제스처만 체크하세요.
+메뉴바 ✌️ 아이콘 → **설정…** → **제스처** 탭에서 쓸 제스처만 체크하세요.
 
 | 제스처 | 하는 법 (오른손 기준) | 기본 동작 | 기본 |
 |---|---|---|---|
@@ -50,8 +101,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 | 위쪽 가운데 톡 | 한 손가락으로 위쪽 가운데를 톡 | 창 가득 | |
 | 다섯 손가락 탭 | 다섯 손가락으로 동시에 톡 | Mission Control | |
 | 오른쪽 아래에서 쓸기 | 모서리에 대고 가운데 쪽으로 쓱 | 새 메모 작성 | |
-| 가장자리 슬라이더 | 왼쪽·오른쪽 끝을 위아래로 | 밝기 · 볼륨 | |
+| 가장자리 슬라이더 ×4 | 왼쪽·오른쪽 끝은 위아래로, 위쪽·아래쪽 끝은 좌우로 | 밝기 · 볼륨 | |
 | ⭐ 투탭 (Pro) | 모서리·위쪽 가운데·세·네 손가락 두 번 톡 | 4분할 · 다음 모니터 · 스크린샷 · 새 탭 | |
+| ⭐ 제목 줄 제스처 (Pro) | 창 제목 줄에서 두 손가락으로 쓸기 · 오므리기 · 벌리기 | 반쪽 · 가득 · 가운데 · 4분할 · 최소화 · 전체 화면 | |
 | ⭐ 스와이프 앱 전환 (Pro) | 한 손가락 대고 두 손가락 좌우로 | 앱 전환 ⌘Tab | |
 
 - 대고 있는 손가락을 떼지 않고 계속 톡톡 치면 여러 번 실행돼요
@@ -60,14 +112,14 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 - 설정 창의 **기본 설정으로 되돌리기** 로 언제든 처음 상태로
 - 설정에서 **언어(한국어 / English)** 를 바꿀 수 있고, **업데이트 확인 → 설치하고 다시 시작** 으로 한 번에 최신 버전이 돼요
 
-## ⭐ 톡톡 Pro — 평생 ₩4,900 (해외 US$3.99) · 맥 3대
+## ⭐ 톡톡 Pro — 정가 ₩9,900 평생 · 맥 3대 (출시 기념 50% ₩4,950)
 
 무료로도 제스처마다 **기본 제공 동작 42가지**를 자유롭게 고를 수 있어요.
-Pro는 **투탭 제스처**, 모든 제스처에 **나만의 단축키**(여러 키 순서대로도), 슬라이더 가로 스크롤·확대/축소, 스와이프 앱 전환, 앱별 끄기를 더해요.
+Pro는 **투탭**, **제목 줄 제스처**, 모든 제스처에 **나만의 단축키**(여러 키 순서대로도), **앱 실행 · 단축어 실행**, **앱별 동작**, 슬라이더 가로 스크롤·확대/축소, 스와이프 앱 전환을 더해요.
 
-1. [toktok.seoriarts.com](https://toktok.seoriarts.com/#buy) 에서 구매 (한국 카드 · PayPal)
-2. 화면과 메일로 받은 **라이선스 코드**를 톡톡 설정 → 톡톡 Pro 에 붙여넣고 **등록**
-3. 한 번 등록하면 인터넷 없이 동작. 맥 3대까지, 포맷해도 같은 코드로 다시 등록
+1. [toktok.seoriarts.com](https://toktok.seoriarts.com/#buy) 에서 구매 (Gumroad · 카드 · Apple Pay · Google Pay)
+2. 메일로 받은 **라이선스 코드**를 톡톡 설정 → **⭐ Pro** 탭에 붙여넣고 **등록**
+3. 하루 한 번 온라인 확인 (인터넷 없이도 30일 유지). 맥 3대까지, 포맷해도 같은 코드로 다시 등록
 
 📖 [사용 설명서](https://toktok.seoriarts.com/guide) · 💻 [기기 관리](https://toktok.seoriarts.com/manage) · ✉️ [코드 다시 받기](https://toktok.seoriarts.com/resend)
 
@@ -77,9 +129,9 @@ Pro는 **투탭 제스처**, 모든 제스처에 **나만의 단축키**(여러 
 
 **제스처는 되는데 아무 일도 안 일어나요** → 손쉬운 사용 권한을 확인하세요. 목록에서 TokTok을 **−** 로 지우고 다시 허용하면 대부분 해결돼요.
 
-**매직 트랙패드에서 안 돼요** → 메뉴바 아이콘 → 트랙패드 다시 찾기
+**매직 트랙패드에서 안 돼요** → 연결하면 자동으로 찾아요. 안 되면 설정 → **도움말** → 다시 찾기
 
-**인식이 이상해요** → 메뉴바 아이콘 → 디버그 로그 기록을 켜면 `~/Library/Logs/TokTok.log`에 이유가 기록돼요
+**인식이 이상해요** → 설정 → **도움말** → 디버그 로그 기록을 켜고 **의견 보내기**로 보내 주세요 (로그가 자동 첨부돼요)
 
 ## 🗑 삭제
 
@@ -87,6 +139,6 @@ Pro는 **투탭 제스처**, 모든 제스처에 **나만의 단축키**(여러 
 
 ## 라이선스
 
-톡톡은 **무료로 배포되는 앱**이에요 (Pro 기능은 라이선스 구매).
-0.6.2까지의 소스는 이 저장소 기록에 MIT 라이선스로 남아 있고, 이후 버전의 소스는 공개하지 않아요.
-이 저장소는 **공증된 릴리스 배포 · 설치 스크립트 · 문의(Issues)** 용도예요.
+- **TokTokCore** (이 저장소의 `Sources/`, 제스처 인식 엔진)와 `install.sh` 는 **MIT** 로 공개돼 있어요. 자유롭게 쓰고 고치고 공유하세요.
+- **톡톡 앱**은 무료로 배포되는 앱이에요. Pro 기능(투탭 · 제목 줄 · 내 단축키 · 앱별 동작 등)은 소스를 공개하지 않고, 라이선스 구매로 쓸 수 있어요.
+- 이 저장소는 **제스처 엔진 소스 · 공증된 릴리스 배포 · 설치 스크립트 · 문의(Issues)** 용도예요.

@@ -1,11 +1,25 @@
-톡톡 (TokTok) — Copyright (c) 2026 SeoriArts (서리아트)
+TokTok (톡톡) — Copyright (c) 2026 SeoriArts (서리아트)
 
-This repository distributes notarized builds of TokTok and its installer script.
+1) TokTokCore (Package.swift, Sources/CMultitouch, Sources/TokTokCore, Sources/toktok-demo)
+   and install.sh are released under the MIT License:
 
-- Versions up to and including 0.6.2: source code released under the MIT License
-  (see the Git history of this repository, e.g. tag v0.6.2).
-- Versions 0.6.3 and later: freeware. The app may be downloaded and used free of charge;
-  Pro features require a license from https://toktok.seoriarts.com.
-  Redistribution, modification, or circumvention of the license check is not permitted.
+   Permission is hereby granted, free of charge, to any person obtaining a copy of this
+   software and associated documentation files (the "Software"), to deal in the Software
+   without restriction, including without limitation the rights to use, copy, modify, merge,
+   publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons
+   to whom the Software is furnished to do so, subject to the following conditions:
 
-The installer script (install.sh) is MIT-licensed.
+   The above copyright notice and this permission notice shall be included in all copies or
+   substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+   PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+   FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+   DEALINGS IN THE SOFTWARE.
+
+2) The TokTok app (released binaries) is freeware. Versions up to 0.6.2 were open source
+   under MIT (see Git history). Later app versions are closed source; Pro features require
+   a license from https://toktok.seoriarts.com. Redistribution, modification, or
+   circumvention of the license check of the app is not permitted.
