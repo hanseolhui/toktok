@@ -6,44 +6,81 @@ struct SettingsView: View {
     @ObservedObject var settings = Settings.shared
     @ObservedObject var license = License.shared
     @ObservedObject var language = AppLanguage.shared
-    @ObservedObject var updater = Updater.shared
     @State private var confirmReset = false
+    @State private var tab: Tab = CommandLine.arguments.contains("--scroll-pro") ? .pro : .gestures
+
+    enum Tab: Hashable { case gestures, pro, general, help }
 
     var body: some View {
-        ScrollViewReader { proxy in
-        Form {
-            ForEach(Gesture.Group.allCases, id: \.self) { group in
-                Section(group.title) {
-                    ForEach(Gesture.allCases.filter { $0.group == group }) { g in
-                        GestureRow(gesture: g).id(g.id)
-                    }
-                }
-            }
+        TabView(selection: $tab) {
+            gesturesTab.tabItem { Label(t("제스처", "Gestures"), systemImage: "hand.tap") }.tag(Tab.gestures)
+            proTab.tabItem { Label(t("⭐ Pro", "⭐ Pro"), systemImage: "star") }.tag(Tab.pro)
+            generalTab.tabItem { Label(t("일반", "General"), systemImage: "gearshape") }.tag(Tab.general)
+            helpTab.tabItem { Label(t("도움말", "Help"), systemImage: "questionmark.circle") }.tag(Tab.help)
+        }
+        .padding(.top, 6)
+        .frame(width: 620, height: 700)
+        // 언어를 바꾸면 제목까지 새로 그리기
+        .id(language.choice)
+        .onChange(of: language.choice) { _ in
+            DispatchQueue.main.async { NSApp.windows.first { $0.contentViewController is NSHostingController<SettingsView> }?.title = t("톡톡 설정", "TokTok Settings") }
+        }
+        .confirmationDialog(t("모든 제스처를 기본 설정으로 되돌릴까요?", "Reset all gestures to defaults?"), isPresented: $confirmReset) {
+            Button(t("되돌리기", "Reset"), role: .destructive) { settings.resetToDefaults() }
+        }
+    }
 
+    private func groupSection(_ group: Gesture.Group) -> some View {
+        Section(group.title) {
+            ForEach(Gesture.allCases.filter { $0.group == group }) { g in GestureRow(gesture: g).id(g.id) }
+        }
+    }
+
+    // 무료 제스처
+    private var gesturesTab: some View {
+        Form {
+            groupSection(.tipTap)
+            groupSection(.tap)
+            groupSection(.corner)
             Section(t("가장자리 슬라이더", "Edge sliders")) {
                 ForEach(EdgeSide.allCases) { SliderRow(side: $0) }
                 Text(t("트랙패드 끝에 손가락을 대고 쓸어요. 왼쪽·오른쪽 끝은 위아래로, 위쪽·아래쪽 끝은 좌우로. 가로 스크롤·확대/축소·단축키는 Pro.",
                        "Rest a finger on an edge and slide: left/right edges up and down, top/bottom edges sideways. Horizontal scroll, zoom and shortcuts are Pro."))
                     .font(.caption).foregroundStyle(.secondary)
             }
+        }
+        .formStyle(.grouped)
+    }
 
+    // Pro: 라이선스 · 투탭 · 제목 줄 · 앱 전환 · 앱별 끄기
+    private var proTab: some View {
+        Form {
+            if Store.sellsPro { ProSection().id("pro") }
+            groupSection(.double)
+            Section {
+                ForEach(Gesture.allCases.filter { $0.group == .titlebar }) { g in GestureRow(gesture: g).id(g.id) }
+            } header: {
+                Text(Gesture.Group.titlebar.title)
+            } footer: {
+                Text(t("포인터를 창의 제목 줄(맨 위)에 두고 두 손가락으로 쓸거나 오므리면, 그 창에 동작해요.",
+                       "Point at a window's title bar and swipe or pinch with two fingers — the action applies to that window."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section(t("⭐ 스와이프 앱 전환 (Pro)", "⭐ Swipe to switch apps (Pro)")) {
                 ProToggle(title: t("한 손가락 대고 두 손가락을 좌우로 → 앱 전환 (⌘Tab)", "Rest one finger, slide two fingers sideways → switch apps (⌘Tab)"),
                           isOn: Binding(get: { settings.appSwitch }, set: { settings.appSwitch = $0 }))
-                Text(t("시스템 설정 → 트랙패드 → 추가 제스처의 '전체 화면 앱 쓸어넘기기'가 세 손가락이면 네 손가락으로 바꿔 주세요.",
-                       "If System Settings → Trackpad → More Gestures uses three fingers for swiping between full-screen apps, switch it to four."))
+                Text(t("시스템 설정의 '전체 화면 앱 쓸어넘기기'가 세 손가락이면 겹쳐요. 도움말 → 시스템 설정 점검을 확인해 주세요.",
+                       "Overlaps with three-finger 'Swipe between full-screen apps'. See Help → System settings check."))
                     .font(.caption).foregroundStyle(.secondary)
             }
-
             ExcludedAppsSection()
+        }
+        .formStyle(.grouped)
+    }
 
+    private var generalTab: some View {
+        Form {
             Section {
-                HStack {
-                    Text(t("제스처 하는 법, 동작 바꾸기, Pro 등록, 문제 해결", "How to use gestures, change actions, register Pro, troubleshooting"))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Button(t("📖 사용 설명서", "📖 User guide")) { NSWorkspace.shared.open(Store.guideURL) }
-                }
                 Toggle(isOn: $settings.typingGuard) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(t("타자 칠 때는 잠깐 쉬기", "Pause while typing"))
@@ -52,9 +89,16 @@ struct SettingsView: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Toggle(t("제스처가 인식되면 트랙패드 진동", "Haptic feedback when a gesture is recognized"), isOn: $settings.haptic)
                 Toggle(t("로그인 시 자동 실행", "Launch at login"), isOn: Binding(get: { settings.launchAtLogin },
-                                                        set: { settings.launchAtLogin = $0 }))
+                                                                              set: { settings.launchAtLogin = $0 }))
+            }
+            Section {
+                Picker(t("언어", "Language"), selection: $language.choice) {
+                    ForEach(AppLanguage.Choice.allCases) { Text($0.title).tag($0) }
+                }
+                UpdateRow()
+            }
+            Section {
                 HStack {
                     Text(t("사용 체크와 동작을 처음 상태로 돌려요", "Restore gesture checkboxes and actions"))
                         .foregroundStyle(.secondary)
@@ -62,19 +106,23 @@ struct SettingsView: View {
                     Button(t("기본 설정으로 되돌리기", "Reset to defaults")) { confirmReset = true }
                 }
             }
+        }
+        .formStyle(.grouped)
+    }
 
+    private var helpTab: some View {
+        Form {
             Section {
-                Picker(t("언어", "Language"), selection: $language.choice) {
-                    ForEach(AppLanguage.Choice.allCases) { Text($0.title).tag($0) }
+                HStack {
+                    Text(t("제스처 하는 법, 동작 바꾸기, Pro 등록, 문제 해결", "How to use gestures, change actions, register Pro, troubleshooting"))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button(t("📖 사용 설명서", "📖 User guide")) { NSWorkspace.shared.open(Store.guideURL) }
                 }
-                UpdateRow()
             }
-
+            SystemCheckSection()
             TroubleshootSection()
             FeedbackSection()
-
-            if Store.sellsPro { ProSection().id("pro") }
-
             if Store.tipURL != nil {
                 Section {
                     HStack {
@@ -86,23 +134,73 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        // 언어를 바꾸면 제목까지 새로 그리기
-        .id(language.choice)
-        .onChange(of: language.choice) { _ in
-            DispatchQueue.main.async { NSApp.windows.first { $0.contentViewController is NSHostingController<SettingsView> }?.title = t("톡톡 설정", "TokTok Settings") }
+    }
+}
+
+/// 톡톡과 겹치는 macOS 트랙패드 설정 점검 (바꾸는 건 사용자가 직접, 설정 화면을 열어 줌)
+struct SystemCheckSection: View {
+    @ObservedObject var language = AppLanguage.shared
+    @State private var tick = 0
+
+    private struct Item: Identifiable {
+        let id: String; let ok: Bool; let title: String; let detail: String; let url: String
+    }
+
+    private static func read(_ key: String) -> Int? {
+        for suite in ["com.apple.AppleMultitouchTrackpad", "com.apple.driver.AppleBluetoothMultitouch.trackpad"] {
+            if let v = UserDefaults(suiteName: suite)?.object(forKey: key) as? Int { return v }
         }
-        .onAppear {
-            // --scroll-pro: 스크린샷용으로 Pro 영역부터 보이게
-            if CommandLine.arguments.contains("--scroll-pro") {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo("pro", anchor: .top) }
-            } else if CommandLine.arguments.contains("--scroll-top") {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo(Gesture.tipTapLeft.id, anchor: .top) }
+        return nil
+    }
+
+    private var items: [Item] {
+        _ = tick
+        let drag = (Self.read("TrackpadThreeFingerDrag") ?? 0) == 1
+        let threeSwipe = (Self.read("TrackpadThreeFingerHorizSwipeGesture") ?? 0) != 0
+        let tap = (Self.read("Clicking") ?? 0) == 1
+        return [
+            Item(id: "drag", ok: !drag,
+                 title: t("세 손가락으로 드래그", "Three-finger drag"),
+                 detail: drag ? t("켜져 있어요 → 세 손가락 탭이 드래그로 먹힐 수 있어요. 설정 열기 → 트랙패드 옵션… → 드래그 스타일을 '세 손가락 드래그'가 아닌 것으로 바꿔 주세요.", "On → three-finger taps may become drags. Open settings → Trackpad Options… → set Dragging style to something other than three-finger drag.")
+                              : t("꺼져 있어요 · 좋아요", "Off · good"),
+                 url: "x-apple.systempreferences:com.apple.preference.universalaccess?Mouse"),
+            Item(id: "swipe", ok: !threeSwipe,
+                 title: t("전체 화면 앱 쓸어넘기기 (세 손가락)", "Swipe between full-screen apps (three fingers)"),
+                 detail: threeSwipe ? t("세 손가락이에요 → 스와이프 앱 전환(Pro)과 겹쳐요. 네 손가락이나 끔으로 바꾸면 좋아요.", "Three fingers → overlaps with swipe app switching (Pro). Use four fingers or off.")
+                                    : t("겹치지 않아요 · 좋아요", "No overlap · good"),
+                 url: "x-apple.systempreferences:com.apple.Trackpad-Settings.extension"),
+            Item(id: "tap", ok: true,
+                 title: t("탭하여 클릭하기", "Tap to click"),
+                 detail: tap ? t("켜져 있어요 → 모서리 톡을 하면 클릭도 함께 돼요 (괜찮아요)", "On → corner taps also click (that's fine)")
+                             : t("꺼져 있어요 · 모서리 톡이 클릭 없이 동작해요", "Off · corner taps won't click"),
+                 url: "x-apple.systempreferences:com.apple.Trackpad-Settings.extension"),
+        ]
+    }
+
+    var body: some View {
+        Section {
+            ForEach(items) { i in
+                HStack(alignment: .top) {
+                    Image(systemName: i.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                        .foregroundStyle(i.ok ? .green : .orange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(i.title)
+                        Text(i.detail).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if !i.ok { Button(t("설정 열기", "Open settings")) { NSWorkspace.shared.open(URL(string: i.url)!) } }
+                }
             }
-        }
-        }
-        .frame(width: 600, height: 680)
-        .confirmationDialog(t("모든 제스처를 기본 설정으로 되돌릴까요?", "Reset all gestures to defaults?"), isPresented: $confirmReset) {
-            Button(t("되돌리기", "Reset"), role: .destructive) { settings.resetToDefaults() }
+        } header: {
+            HStack {
+                Text(t("시스템 설정 점검", "System settings check"))
+                Spacer()
+                Button(t("다시 확인", "Check again")) { tick += 1 }.buttonStyle(.link).font(.caption)
+            }
+        } footer: {
+            Text(t("톡톡은 이 설정들을 바꾸지 않아요. 필요하면 '설정 열기'로 직접 바꿔 주세요.",
+                   "TokTok never changes these for you. Use 'Open settings' if you want to change them."))
+                .font(.caption).foregroundStyle(.secondary)
         }
     }
 }
@@ -230,6 +328,7 @@ struct ProSection: View {
     @State private var busy = false
     /// 등록된 기기 (Pro 사용 중이거나, 한도 초과로 해제가 필요할 때)
     @State private var devices: [License.Device] = []
+    @State private var priceText = Store.priceText
 
     var body: some View {
         Section(t("톡톡 Pro", "TokTok Pro")) {
@@ -237,14 +336,14 @@ struct ProSection: View {
                 HStack {
                     Label(t("Pro 사용 중 — ", "Pro active — ") + "\(Demo.on ? "you@example.com" : license.email ?? "")", systemImage: "checkmark.seal.fill")
                     Spacer()
-                    Text(Demo.on ? "TOK-A2B3-C4D5-E6F7" : license.code ?? "").font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
+                    Text(Demo.on ? "TOK-••••-••••-••••" : license.code ?? "").font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                 }
                 deviceList(code: nil)
             } else {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(t("원하는 단축키를 직접 녹화해 제스처에 연결 (여러 키 순서 실행)", "Record your own shortcuts for gestures (including key sequences)"))
-                        Text(Store.priceText).font(.caption).foregroundStyle(.secondary)
+                        Text(priceText).font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
                     Button(t("Pro 구매", "Get Pro")) { license.openCheckout() }
@@ -267,6 +366,7 @@ struct ProSection: View {
                     .buttonStyle(.link).font(.caption)
             }
         }
+        .task { priceText = await Store.fetchPriceText() }
         .task(id: license.code) {
             if Demo.on { devices = Demo.devices; return }
             if license.payload != nil { devices = (try? await license.devices()) ?? [] }

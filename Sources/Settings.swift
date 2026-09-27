@@ -21,17 +21,14 @@ final class Settings: ObservableObject {
     @Published var appSwitch: Bool { didSet { UserDefaults.standard.set(appSwitch, forKey: "appSwitch"); syncDetector() } }
     /// 타자 중에는 잠깐 쉬기 (키를 누른 뒤 0.5초)
     @Published var typingGuard: Bool { didSet { UserDefaults.standard.set(typingGuard, forKey: "typingGuard") } }
-    /// 제스처가 인식되면 트랙패드 진동
-    @Published var haptic: Bool { didSet { UserDefaults.standard.set(haptic, forKey: "haptic") } }
     /// 마지막으로 키보드를 누른 때 (다른 앱에서, 메인 스레드)
     var lastKeyTime = Date.distantPast
     /// 톡톡을 끌 앱 (번들 ID, Pro)
     @Published var excludedApps: [String] { didSet { UserDefaults.standard.set(excludedApps, forKey: "excludedApps") } }
 
     private init() {
-        UserDefaults.standard.register(defaults: ["enabled": true, "typingGuard": true, "haptic": true])
+        UserDefaults.standard.register(defaults: ["enabled": true, "typingGuard": true])
         typingGuard = UserDefaults.standard.bool(forKey: "typingGuard")
-        haptic = UserDefaults.standard.bool(forKey: "haptic")
         enabled = UserDefaults.standard.bool(forKey: "enabled")
         appSwitch = UserDefaults.standard.bool(forKey: "appSwitch")
         excludedApps = UserDefaults.standard.stringArray(forKey: "excludedApps") ?? []
@@ -68,6 +65,7 @@ final class Settings: ObservableObject {
         c.sliders = Set(EdgeSide.allCases.filter { slider($0).enabled })
         c.swipeIn = setting(.swipeInBottomRight).enabled
         c.appSwitch = pro && appSwitch
+        c.titlebar = pro && Gesture.allCases.contains { $0.group == .titlebar && setting($0).enabled }
         GestureDetector.shared.config = c
     }
 
@@ -125,7 +123,14 @@ final class Settings: ObservableObject {
         let s = setting(g)
         guard s.enabled, !g.isPro || License.shared.isPro else { return }
         // 기본 제공 동작은 누구나, 직접 입력 단축키는 Pro 만 (아니면 기본 동작)
-        if haptic { NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now) }
+        // 제목 줄 제스처: 포인터가 창 제목 줄에 있을 때만, 그 창을 앞으로 가져온 뒤 실행
+        if g.group == .titlebar {
+            guard let loc = CGEvent(source: nil)?.location, let win = WindowTiler.titleBarWindow(at: loc) else { return }
+            WindowTiler.focus(win)
+            let action = s.action
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { action.perform() }
+            return
+        }
         if case .preset = s.action { s.action.perform(); return }
         (License.shared.isPro ? s.action : g.defaultSetting.action).perform()
     }

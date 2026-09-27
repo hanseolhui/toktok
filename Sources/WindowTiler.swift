@@ -3,7 +3,8 @@ import ApplicationServices
 
 /// 맨 앞 창을 화면 반 · 4분할 · 가득 · 다음 모니터로 (손쉬운 사용 API 로 직접 이동)
 enum WindowTiler {
-    enum Mode { case left, right, fill, center, topLeft, topRight, bottomLeft, bottomRight, nextScreen }
+    enum Mode { case left, right, fill, center, topLeft, topRight, bottomLeft, bottomRight, nextScreen
+        case leftThird, centerThird, rightThird, leftTwoThirds, rightTwoThirds }
 
     static func tile(_ mode: Mode) {
         guard let app = NSWorkspace.shared.frontmostApplication else { return }
@@ -29,6 +30,18 @@ enum WindowTiler {
         case .left:  target.size.width = halfW
         case .right: target.size.width = halfW; target.origin.x = area.maxX - halfW
         case .fill:  break
+        case .leftThird, .centerThird, .rightThird, .leftTwoThirds, .rightTwoThirds:
+            let third = (area.width / 3).rounded()
+            let (x, w): (CGFloat, CGFloat) = {
+                switch mode {
+                case .leftThird:      return (area.minX, third)
+                case .centerThird:    return (area.minX + third, third)
+                case .rightThird:     return (area.maxX - third, third)
+                case .leftTwoThirds:  return (area.minX, area.width - third)
+                default:              return (area.minX + third, area.width - third)
+                }
+            }()
+            target = CGRect(x: x, y: area.minY, width: w, height: area.height)
         case .center:
             // 가로 2/3 · 세로 3/4 크기로 화면 가운데
             let w = (area.width * 2 / 3).rounded(), h = (area.height * 3 / 4).rounded()
@@ -51,6 +64,54 @@ enum WindowTiler {
         set(window, position: target.origin)
         set(window, size: target.size)
         set(window, position: target.origin)
+    }
+
+    /// 맨 앞 창 닫기 (빨간 버튼 누르기)
+    static func closeFocused() {
+        guard let w = focusedWindow() else { return }
+        var ref: CFTypeRef?
+        if AXUIElementCopyAttributeValue(w, kAXCloseButtonAttribute as CFString, &ref) == .success, let ref {
+            AXUIElementPerformAction(ref as! AXUIElement, kAXPressAction as CFString)
+        }
+    }
+
+    private static func focusedWindow() -> AXUIElement? {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
+        var ref: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(AXUIElementCreateApplication(app.processIdentifier), kAXFocusedWindowAttribute as CFString, &ref) == .success,
+              let ref, CFGetTypeID(ref) == AXUIElementGetTypeID() else { return nil }
+        return (ref as! AXUIElement)
+    }
+
+    // MARK: 제목 줄 제스처
+
+    /// 포인터가 창의 제목 줄(맨 위 56pt 안)에 있으면 그 창
+    static func titleBarWindow(at point: CGPoint) -> AXUIElement? {
+        var el: AXUIElement?
+        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(point.x), Float(point.y), &el) == .success,
+              var cur = el else { return nil }
+        for _ in 0..<30 {
+            var role: CFTypeRef?
+            AXUIElementCopyAttributeValue(cur, kAXRoleAttribute as CFString, &role)
+            if (role as? String) == kAXWindowRole {
+                guard let f = currentFrame(cur), point.y >= f.minY, point.y - f.minY <= 56 else { return nil }
+                return cur
+            }
+            var parent: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(cur, kAXParentAttribute as CFString, &parent) == .success,
+                  let parent, CFGetTypeID(parent) == AXUIElementGetTypeID() else { return nil }
+            cur = parent as! AXUIElement
+        }
+        return nil
+    }
+
+    /// 그 창을 맨 앞으로 (이후 동작이 이 창에 적용되게)
+    static func focus(_ window: AXUIElement) {
+        var pid: pid_t = 0
+        AXUIElementGetPid(window, &pid)
+        NSRunningApplication(processIdentifier: pid)?.activate()
+        AXUIElementSetAttributeValue(window, kAXMainAttribute as CFString, kCFBooleanTrue)
+        AXUIElementPerformAction(window, kAXRaiseAction as CFString)
     }
 
     /// NSScreen 좌표(왼쪽 아래 원점) → 손쉬운 사용 좌표(주 화면 왼쪽 위 원점)

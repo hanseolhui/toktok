@@ -8,6 +8,7 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
     case middleClick, closeTab, reopenTab, newTab
     case windowLeft, windowRight, windowFill, windowCenter, fullScreen
     case quarterTopLeft, quarterTopRight, quarterBottomLeft, quarterBottomRight, windowNextScreen
+    case thirdLeft, thirdCenter, thirdRight, twoThirdsLeft, twoThirdsRight, closeWindow
     case missionControl, appWindows, spaceLeft, spaceRight
     case reload, quickNote, newNote
     case copy, paste, screenshot, save, quitApp, minimize, playPause, nextTrack, prevTrack
@@ -34,7 +35,8 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .back, .forward, .reload: return .navigate
         case .prevTab, .nextTab, .middleClick, .closeTab, .reopenTab, .newTab: return .tabs
         case .windowLeft, .windowRight, .windowFill, .windowCenter, .fullScreen, .quarterTopLeft, .quarterTopRight,
-             .quarterBottomLeft, .quarterBottomRight, .windowNextScreen: return .window
+             .quarterBottomLeft, .quarterBottomRight, .windowNextScreen,
+             .thirdLeft, .thirdCenter, .thirdRight, .twoThirdsLeft, .twoThirdsRight, .closeWindow: return .window
         case .missionControl, .appWindows, .spaceLeft, .spaceRight: return .screen
         case .quickNote, .newNote, .copy, .paste, .screenshot, .save, .quitApp: return .etc
         case .minimize: return .window
@@ -62,6 +64,12 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .quarterBottomLeft:  return t("창을 왼쪽 아래 4분의 1로", "Window to bottom-left quarter")
         case .quarterBottomRight: return t("창을 오른쪽 아래 4분의 1로", "Window to bottom-right quarter")
         case .windowNextScreen:   return t("창을 다음 모니터로", "Window to next display")
+        case .thirdLeft:          return t("창을 왼쪽 3분의 1로", "Window to left third")
+        case .thirdCenter:        return t("창을 가운데 3분의 1로", "Window to center third")
+        case .thirdRight:         return t("창을 오른쪽 3분의 1로", "Window to right third")
+        case .twoThirdsLeft:      return t("창을 왼쪽 3분의 2로", "Window to left two-thirds")
+        case .twoThirdsRight:     return t("창을 오른쪽 3분의 2로", "Window to right two-thirds")
+        case .closeWindow:        return t("창 닫기 (빨간 버튼)", "Close window (red button)")
         case .spaceLeft:          return t("왼쪽 데스크톱으로  ⌃←", "Desktop to the left  ⌃←")
         case .spaceRight:         return t("오른쪽 데스크톱으로  ⌃→", "Desktop to the right  ⌃→")
         case .reload:             return t("새로고침  ⌘R", "Reload  ⌘R")
@@ -101,6 +109,12 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
         case .quarterBottomLeft:  WindowTiler.tile(.bottomLeft)
         case .quarterBottomRight: WindowTiler.tile(.bottomRight)
         case .windowNextScreen:   WindowTiler.tile(.nextScreen)
+        case .thirdLeft:          WindowTiler.tile(.leftThird)
+        case .thirdCenter:        WindowTiler.tile(.centerThird)
+        case .thirdRight:         WindowTiler.tile(.rightThird)
+        case .twoThirdsLeft:      WindowTiler.tile(.leftTwoThirds)
+        case .twoThirdsRight:     WindowTiler.tile(.rightTwoThirds)
+        case .closeWindow:        WindowTiler.closeFocused()
         case .spaceLeft:          Keys.press(Keys.leftArrow, [.maskControl, .maskSecondaryFn])
         case .spaceRight:         Keys.press(Keys.rightArrow, [.maskControl, .maskSecondaryFn])
         case .reload:             Keys.press(Keys.r, [.maskCommand])

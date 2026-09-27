@@ -21,7 +21,20 @@ enum Store {
     /// 개발자에게 커피 사주기
     static let tipURL: URL? = URL(string: "https://seoriarts.gumroad.com/coffee")
     /// 가격 표시
-    static var priceText: String { t("평생 ₩4,900 · 맥 3대", "₩4,900 (about US$3.99) lifetime · 3 Macs") }
+    static var priceText: String { t("평생 ₩9,900 · 맥 3대", "₩9,900 lifetime · 3 Macs") }
+
+    /// 서버의 지금 가격 (할인 중이면 할인가) — 가격을 바꿔도 앱을 다시 배포하지 않게
+    static func fetchPriceText() async -> String {
+        struct Config: Decodable { let priceKrw: Int?; let saleKrw: Int? }
+        guard let (data, _) = try? await URLSession.shared.data(from: server.appendingPathComponent("api/config")),
+              let c = try? JSONDecoder().decode(Config.self, from: data), let price = c.priceKrw else { return priceText }
+        let won = { (n: Int) in "₩" + n.formatted(.number.grouping(.automatic)) }
+        if let sale = c.saleKrw, sale < price {
+            let off = Int((Double(price - sale) / Double(price) * 100).rounded())
+            return t("평생 \(won(price)) → 출시 기념 \(off)% 할인 \(won(sale)) · 맥 3대", "\(won(price)) → launch sale \(off)% off \(won(sale)) · lifetime · 3 Macs")
+        }
+        return t("평생 \(won(price)) · 맥 3대", "\(won(price)) lifetime · 3 Macs")
+    }
     /// 기기 인증서 서명 확인용 공개 키 (서버의 LICENSE_PRIVATE_KEY 짝)
     static let publicKey = "3LB12Dy_fPtx7EnTk-xIfPF_vcToLsKTmDmVzhUuFQQ"
 

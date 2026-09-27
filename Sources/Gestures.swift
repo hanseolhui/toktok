@@ -14,6 +14,8 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
     /// 투탭 (Pro): 모서리·위쪽 가운데를 두 번 톡
     case doubleTopLeft, doubleTopRight, doubleBottomLeft, doubleBottomRight, doubleTopCenter
     case doubleThreeFinger, doubleFourFinger
+    /// 제목 줄 제스처 (Pro): 창 제목 줄 위에서 두 손가락으로 쓸기 · 오므리기 · 벌리기
+    case titleSwipeLeft, titleSwipeRight, titleSwipeUp, titleSwipeDown, titlePinchIn, titlePinchOut
 
     var id: String { rawValue }
 
@@ -39,6 +41,12 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
         case .doubleTopCenter:   return t("위쪽 가운데 투탭", "Top-center double tap")
         case .doubleThreeFinger: return t("세 손가락 투탭", "Three-finger double tap")
         case .doubleFourFinger:  return t("네 손가락 투탭", "Four-finger double tap")
+        case .titleSwipeLeft:    return t("제목 줄에서 왼쪽으로 쓸기", "Title bar: swipe left")
+        case .titleSwipeRight:   return t("제목 줄에서 오른쪽으로 쓸기", "Title bar: swipe right")
+        case .titleSwipeUp:      return t("제목 줄에서 위로 쓸기", "Title bar: swipe up")
+        case .titleSwipeDown:    return t("제목 줄에서 아래로 쓸기", "Title bar: swipe down")
+        case .titlePinchIn:      return t("제목 줄에서 오므리기", "Title bar: pinch in")
+        case .titlePinchOut:     return t("제목 줄에서 벌리기", "Title bar: pinch out")
         }
     }
 
@@ -57,6 +65,10 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
             return t("한 손가락으로 트랙패드 위쪽 가운데를 톡", "Tap the top-center edge of the trackpad with one finger")
         case .swipeInBottomRight:
             return t("오른쪽 아래 모서리에 대고 가운데 쪽으로 쓱", "Start at the bottom-right corner and swipe toward the center")
+        case .titleSwipeLeft, .titleSwipeRight, .titleSwipeUp, .titleSwipeDown:
+            return t("포인터를 창 제목 줄에 두고 두 손가락으로 쓱", "Point at a window's title bar, swipe with two fingers")
+        case .titlePinchIn, .titlePinchOut:
+            return t("포인터를 창 제목 줄에 두고 두 손가락으로 오므리거나 벌리기", "Point at a window's title bar, pinch with two fingers")
         case .doubleTopLeft, .doubleTopRight, .doubleBottomLeft, .doubleBottomRight, .doubleTopCenter, .doubleThreeFinger, .doubleFourFinger:
             return t("같은 곳을 빠르게 두 번 톡 (켜면 그 자리 한 번 톡은 조금 늦게 실행돼요)",
                      "Tap the same spot twice quickly (single tap there runs slightly later)")
@@ -64,7 +76,7 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
     }
 
     /// Pro 전용 제스처
-    var isPro: Bool { group == .double }
+    var isPro: Bool { group == .double || group == .titlebar }
 
     /// 투탭 제스처의 한 번 톡 짝
     var doubleTap: Gesture? {
@@ -81,13 +93,14 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
     }
 
     enum Group: String, CaseIterable {
-        case tipTap, tap, corner, double
+        case tipTap, tap, corner, double, titlebar
         var title: String {
             switch self {
             case .tipTap: return t("대고 톡", "Rest & tap")
             case .tap:    return t("여러 손가락 탭", "Multi-finger tap")
             case .corner: return t("모서리·가장자리", "Corners & edges")
             case .double: return t("⭐ 투탭 (Pro)", "⭐ Double tap (Pro)")
+            case .titlebar: return t("⭐ 제목 줄 제스처 (Pro)", "⭐ Title bar gestures (Pro)")
             }
         }
     }
@@ -97,6 +110,7 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
         case .threeFingerTap, .fourFingerTap, .fiveFingerTap: return .tap
         case .doubleTopLeft, .doubleTopRight, .doubleBottomLeft, .doubleBottomRight, .doubleTopCenter,
              .doubleThreeFinger, .doubleFourFinger: return .double
+        case .titleSwipeLeft, .titleSwipeRight, .titleSwipeUp, .titleSwipeDown, .titlePinchIn, .titlePinchOut: return .titlebar
         default: return .corner
         }
     }
@@ -124,6 +138,12 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
         case .doubleTopCenter:   return .init(enabled: false, action: .preset(.windowNextScreen))
         case .doubleThreeFinger: return .init(enabled: false, action: .preset(.screenshot))
         case .doubleFourFinger:  return .init(enabled: false, action: .preset(.newTab))
+        case .titleSwipeLeft:    return .init(enabled: true, action: .preset(.windowLeft))
+        case .titleSwipeRight:   return .init(enabled: true, action: .preset(.windowRight))
+        case .titleSwipeUp:      return .init(enabled: true, action: .preset(.windowFill))
+        case .titleSwipeDown:    return .init(enabled: true, action: .preset(.windowCenter))
+        case .titlePinchIn:      return .init(enabled: true, action: .preset(.minimize))
+        case .titlePinchOut:     return .init(enabled: true, action: .preset(.fullScreen))
         }
     }
 }
@@ -225,6 +245,8 @@ enum Tuning {
     static let swipeInMaxDuration = 0.6
     /// 스와이프 앱 전환: 한 칸 이동 거리
     static let appSwitchStep: Float = 0.08
+    /// 제목 줄 쓸기: 최소 이동 거리
+    static let titleSwipeMin: Float = 0.12
 }
 
 // MARK: - 제스처 감지 (멀티터치 콜백 스레드에서 실행)
@@ -258,6 +280,7 @@ final class GestureDetector {
         var sliders: Set<EdgeSide> = []
         var swipeIn = false
         var appSwitch = false
+        var titlebar = false
     }
     private let lock = NSLock()
     private var _config = Config()
@@ -296,6 +319,8 @@ final class GestureDetector {
         var sliderY: Float = 0
         /// 스와이프 앱 전환 중: 기준 가로 위치
         var switchBaseX: Float?
+        /// 두 손가락 쓸기·오므리기 판단용: 손가락별 시작·끝 위치
+        var tracks: [Int32: (sx: Float, sy: Float, ex: Float, ey: Float)] = [:]
         var switching = false
     }
 
@@ -363,8 +388,8 @@ final class GestureDetector {
         // 떨어진 손가락
         let lifted = fingers.filter { current[$0.key] == nil }
         for id in lifted.keys { fingers[id] = nil }
-        for (_, f) in lifted {
-            if var s = session { s.maxMove = max(s.maxMove, f.moved); session = s }
+        for (id, f) in lifted {
+            if var s = session { s.maxMove = max(s.maxMove, f.moved); if s.tracks.count < 3 { s.tracks[id] = (f.startX, f.startY, f.x, f.y) }; session = s }
             evaluateTipTap(f, time: time)
         }
 
@@ -481,6 +506,11 @@ final class GestureDetector {
             return fire(.swipeInBottomRight, time: time)
         }
 
+        // 두 손가락으로 쓸기 · 오므리기 · 벌리기 (제목 줄 위일 때만 실행됨)
+        if n == 2, s.maxConcurrent == 2, config.titlebar, duration <= 0.9, let g = twoFingerGesture(s) {
+            return fire(g, time: time)
+        }
+
         guard n == s.maxConcurrent, s.maxMove <= Tuning.tapMaxMove else { return }
 
         if n >= 3 {
@@ -504,6 +534,21 @@ final class GestureDetector {
             guard let g else { return }
             zoneTap(g, time: time, x: s.firstX, y: s.firstY)
         }
+    }
+
+    private func twoFingerGesture(_ s: Session) -> Gesture? {
+        let t = Array(s.tracks.values)
+        guard t.count == 2 else { return nil }
+        let d0 = hypot(t[0].sx - t[1].sx, t[0].sy - t[1].sy), d1 = hypot(t[0].ex - t[1].ex, t[0].ey - t[1].ey)
+        if d0 > 0.05, d1 / d0 < 0.6 { return .titlePinchIn }
+        if d0 > 0.02, d1 / d0 > 1.6 { return .titlePinchOut }
+        let dx = (t[0].ex - t[0].sx + t[1].ex - t[1].sx) / 2, dy = (t[0].ey - t[0].sy + t[1].ey - t[1].sy) / 2
+        // 두 손가락이 같은 방향으로 움직였는지
+        let same = (t[0].ex - t[0].sx) * (t[1].ex - t[1].sx) + (t[0].ey - t[0].sy) * (t[1].ey - t[1].sy) > 0
+        guard same, max(abs(dx), abs(dy)) >= Tuning.titleSwipeMin else { return nil }
+        if abs(dx) > abs(dy) * 1.5 { return dx < 0 ? .titleSwipeLeft : .titleSwipeRight }
+        if abs(dy) > abs(dx) * 1.5 { return dy > 0 ? .titleSwipeUp : .titleSwipeDown }
+        return nil
     }
 
     /// 모서리·가장자리 톡: 투탭이 켜져 있으면 두 번째 톡을 잠깐 기다림
