@@ -16,7 +16,7 @@ for arch in $ARCHS; do
   swiftc -O \
     -import-objc-header Sources/MultitouchBridge.h \
     -target "$arch-apple-macos13.0" \
-    Sources/main.swift \
+    Sources/*.swift \
     -o "$OUT/TokTok-$arch"
   BINS+=("$OUT/TokTok-$arch")
 done
