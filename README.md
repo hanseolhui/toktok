@@ -79,24 +79,12 @@ Pro는 **투탭 제스처**, 모든 제스처에 **나만의 단축키**(여러 
 
 **인식이 이상해요** → 메뉴바 아이콘 → 디버그 로그 기록을 켜면 `~/Library/Logs/TokTok.log`에 이유가 기록돼요
 
-## 🔧 작동 원리
-
-macOS 내부의 `MultitouchSupport` 프레임워크로 손가락 좌표를 실시간으로 받아 제스처를 찾고, 키 입력·가운데 클릭을 보내거나 손쉬운 사용 API로 창을 옮겨요. Apple 비공개 프레임워크라 macOS 대규모 업데이트 때 동작이 바뀔 수 있어요.
-
-| 파일 | 내용 |
-|---|---|
-| `Sources/Gestures.swift` | 제스처 종류, 인식 기준(`Tuning`), 감지 |
-| `Sources/Actions.swift` | 동작, 키·마우스 입력 |
-| `Sources/WindowTiler.swift` | 창 정렬 |
-| `Sources/Settings.swift`, `SettingsView.swift` | 설정 저장, 설정 창 |
-| `Sources/License.swift` | Pro 라이선스 (서버 등록, 오프라인 확인) |
-
-직접 빌드: `./build.sh` (결과: `build/TokTok.app`), 배포용 공증 릴리스: `./release.sh 버전`
-
 ## 🗑 삭제
 
 메뉴바 아이콘 → 톡톡 종료 → 응용 프로그램 폴더의 `TokTok.app` 삭제 (Homebrew로 설치했다면 `brew uninstall --cask toktok`)
 
 ## 라이선스
 
-소스 코드는 MIT. 톡톡 Pro 라이선스 키는 개발자를 응원하는 방법이에요 🙏
+톡톡은 **무료로 배포되는 앱**이에요 (Pro 기능은 라이선스 구매).
+0.6.2까지의 소스는 이 저장소 기록에 MIT 라이선스로 남아 있고, 이후 버전의 소스는 공개하지 않아요.
+이 저장소는 **공증된 릴리스 배포 · 설치 스크립트 · 문의(Issues)** 용도예요.
