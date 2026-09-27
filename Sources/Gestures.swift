@@ -206,6 +206,8 @@ enum Tuning {
     static let edgeWidth: Float = 0.07
     static let sliderStep: Float = 0.05
     static let sliderMaxSideMove: Float = 0.08
+    /// 이만큼 위아래로 움직이면 슬라이더로 보고 포인터를 붙잡음
+    static let sliderHoldStart: Float = 0.012
     /// 안쪽으로 쓸기: 최소 이동 거리(가로·세로 각각) · 최대 시간
     static let swipeInMin: Float = 0.12
     static let swipeInMaxDuration = 0.6
@@ -278,6 +280,9 @@ final class GestureDetector {
         /// 가장자리 슬라이더: 마지막으로 한 칸 움직인 높이
         var sliderSide: EdgeSide?
         var sliderY: Float = 0
+        /// 슬라이더를 쓰는 동안 포인터를 붙잡아 둘 위치 (가장자리에 닿은 순간)
+        var cursor: CGPoint?
+        var holding = false
         /// 스와이프 앱 전환 중: 기준 가로 위치
         var switchBaseX: Float?
         var switching = false
@@ -313,6 +318,7 @@ final class GestureDetector {
                 if p.x < Tuning.edgeWidth, cfg.sliders.contains(.left) { s.sliderSide = .left }
                 if p.x > 1 - Tuning.edgeWidth, cfg.sliders.contains(.right) { s.sliderSide = .right }
                 s.sliderY = p.y
+                if s.sliderSide != nil { s.cursor = CGEvent(source: nil)?.location }
                 session = s
             }
             var anchors: [Int32: (x: Float, y: Float, startTime: Double)] = [:]
@@ -358,13 +364,23 @@ final class GestureDetector {
     private func trackSlider(_ current: [Int32: (x: Float, y: Float)]) {
         guard var s = session, let side = s.sliderSide, s.fingerCount == 1, current.count == 1,
               let p = current.values.first else { return }
-        guard abs(p.x - s.firstX) <= Tuning.sliderMaxSideMove else { s.sliderSide = nil; session = s; return }
+        guard abs(p.x - s.firstX) <= Tuning.sliderMaxSideMove else {
+            s.sliderSide = nil
+            if s.holding { CGAssociateMouseAndMouseCursorPosition(1); s.holding = false }
+            session = s; return
+        }
+        // 위아래로 쓸기 시작하면 바로 포인터를 제자리에 붙잡아 둠
+        if !s.holding, abs(p.y - s.firstY) >= Tuning.sliderHoldStart, abs(p.x - s.firstX) < abs(p.y - s.firstY) {
+            s.holding = true
+            CGAssociateMouseAndMouseCursorPosition(0)
+        }
+        if s.holding, let c = s.cursor { CGWarpMouseCursorPosition(c) }
         var dy = p.y - s.sliderY
         while abs(dy) >= Tuning.sliderStep {
             let up = dy > 0
             s.sliderY += up ? Tuning.sliderStep : -Tuning.sliderStep
             dy = p.y - s.sliderY
-            if !s.consumed { s.consumed = true; CGAssociateMouseAndMouseCursorPosition(0) }   // 조절하는 동안 포인터 고정
+            s.consumed = true
             hub.onSlider?(side, up)
         }
         session = s
@@ -422,7 +438,7 @@ final class GestureDetector {
 
     // 모든 손가락이 떨어진 뒤: 여러 손가락 탭, 모서리 톡, 안쪽으로 쓸기
     private func evaluateSession(_ s: Session, time: Double) {
-        if s.sliderSide != nil, s.consumed { CGAssociateMouseAndMouseCursorPosition(1) }
+        if s.holding { CGAssociateMouseAndMouseCursorPosition(1) }
         guard !s.consumed else { return }
         let duration = time - s.startTime
         let n = s.fingerCount
