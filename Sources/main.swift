@@ -1,8 +1,7 @@
 // 톡톡 (TokTok) — 트랙패드 TipTap 제스처로 뒤로/앞으로 가기
 //
-// 손가락 하나를 댄 채로
-//   왼쪽을 톡  → ⌘[  (뒤로)
-//   오른쪽을 톡 → ⌘]  (앞으로)
+// 오른손 중지를 대고 검지를 톡 → ⌘[  (뒤로)   = 대고 있는 손가락의 왼쪽을 톡
+// 오른손 검지를 대고 중지를 톡 → ⌘]  (앞으로) = 대고 있는 손가락의 오른쪽을 톡
 
 import Cocoa
 import ApplicationServices
@@ -293,7 +292,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
         let on = TipTapDetector.shared.enabled
-        let header = NSMenuItem(title: "톡톡 — 손가락 하나 대고 왼쪽 톡: 뒤로 · 오른쪽 톡: 앞으로", action: nil, keyEquivalent: "")
+        let header = NSMenuItem(title: "중지 대고 검지 톡: 뒤로 · 검지 대고 중지 톡: 앞으로", action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
         menu.addItem(.separator())

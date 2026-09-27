@@ -1,26 +1,34 @@
 # 👆 톡톡 (TokTok)
 
-**맥 트랙패드에 손가락 하나 대고, 옆을 톡 — 뒤로 가기 / 앞으로 가기.**
+**맥 트랙패드에 손가락 하나 대고, 옆 손가락으로 톡 — 뒤로 가기 / 앞으로 가기.**
 
 ```
- 👆 대고 있기 + 왼쪽을 톡   →  ⌘[  뒤로 가기
- 👆 대고 있기 + 오른쪽을 톡  →  ⌘]  앞으로 가기
+ 오른손 중지를 대고 검지를 톡  →  ⌘[  뒤로 가기
+ 오른손 검지를 대고 중지를 톡  →  ⌘]  앞으로 가기
 ```
 
 Safari, 크롬, Finder, 설정 앱 등 ⌘[ / ⌘] 를 지원하는 곳이면 어디서나 동작해요.
 BetterTouchTool의 "TipTap" 제스처를 **무료·오픈소스**로, 딱 이것만 가볍게 만든 메뉴바 앱입니다.
 
-## 🚀 설치 (한 줄)
+## 🚀 설치
 
-터미널에 붙여넣고 Enter:
+애플 공증을 받은 앱이라 받아서 바로 실행돼요. 유니버설(애플 실리콘 + 인텔), macOS 13 이상.
+
+**방법 1. 다운로드** — [최신 릴리스](https://github.com/hanseolhui/toktok/releases/latest)에서 `TokTok.zip` 받기 → 압축 풀고 `TokTok.app`을 **응용 프로그램** 폴더로 옮긴 뒤 실행
+
+**방법 2. Homebrew**
+
+```bash
+brew install --cask hanseolhui/tap/toktok
+```
+
+**방법 3. 터미널 한 줄**
 
 ```bash
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/install.sh)"
 ```
 
-- 소스를 받아 **내 맥에서 직접 빌드**해서 설치해요 → "확인되지 않은 개발자" 경고 없음
-- 빌드에 Apple 개발 도구(Command Line Tools)가 필요해요. 없으면 설치 창이 뜨니, 설치 후 다시 실행하세요.
-- 설치 위치: `~/Applications/TokTok.app`, 로그인 시 자동 실행
+첫 실행 때 로그인 시 자동 실행이 켜져요.
 
 **처음 한 번: 손쉬운 사용 권한 허용**
 시스템 설정 → 개인정보 보호 및 보안 → **손쉬운 사용** → TokTok 켜기
@@ -30,9 +38,13 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 
 ## 🖐 사용법
 
-1. 손가락 하나(예: 검지)를 트랙패드에 **댄 채로**
-2. 다른 손가락으로 그 **왼쪽**을 톡 → 뒤로 / **오른쪽**을 톡 → 앞으로
-3. 첫 손가락을 떼지 않고 계속 톡톡 치면 여러 번 이동
+| 하고 싶은 것 | 오른손 기준 | 원리 |
+|---|---|---|
+| ⬅️ 뒤로 가기 | **중지를 대고 검지를 톡** | 대고 있는 손가락의 왼쪽을 톡 |
+| ➡️ 앞으로 가기 | **검지를 대고 중지를 톡** | 대고 있는 손가락의 오른쪽을 톡 |
+
+- 대고 있는 손가락을 떼지 않고 계속 톡톡 치면 여러 번 이동
+- 왼손이나 다른 손가락이어도 "대고 있는 손가락의 왼쪽/오른쪽"이면 똑같이 동작해요
 
 평소 쓰는 제스처와는 헷갈리지 않게 걸러요:
 
@@ -60,10 +72,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 macOS 내부의 `MultitouchSupport` 프레임워크로 손가락 좌표를 실시간으로 받아, "먼저 닿아 있던 손가락 옆에 짧게 톡 친 손가락"을 찾으면 ⌘[ / ⌘] 키를 보냅니다. BetterTouchTool, Jitouch 등도 같은 방식을 써요. Apple 비공개 프레임워크라 macOS 대규모 업데이트 때 동작이 바뀔 수 있어요.
 
 소스는 Swift 파일 하나(`Sources/main.swift`)예요. 인식 기준은 파일 위쪽 `Tuning`에서 조정할 수 있어요.
+직접 빌드: `./build.sh` (결과: `build/TokTok.app`), 배포용 공증 릴리스: `./release.sh 버전`
 
 ## 🗑 삭제
 
-메뉴바 아이콘 → 톡톡 종료 → `~/Applications/TokTok.app` 삭제
+메뉴바 아이콘 → 톡톡 종료 → 응용 프로그램 폴더의 `TokTok.app` 삭제 (Homebrew로 설치했다면 `brew uninstall --cask toktok`)
 
 ## 라이선스
 
