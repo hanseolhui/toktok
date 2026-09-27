@@ -216,22 +216,21 @@ enum Icon {
             p.transform(using: t)
             return p
         }
-        let palm = NSBezierPath(roundedRect: NSRect(x: 5.3 * s, y: 0.6 * s, width: 7.4 * s, height: 6.4 * s),
-                                xRadius: 2.6 * s, yRadius: 2.6 * s)
+        let palm = NSBezierPath(roundedRect: NSRect(x: 5.0 * s, y: 0.4 * s, width: 8.0 * s, height: 7.6 * s),
+                                xRadius: 2.2 * s, yRadius: 2.2 * s)
         let hand = [
             palm,
-            capsule(x: 7.3, y: 5.2, width: 2.5, length: 9.2, angle: 17),    // 검지
-            capsule(x: 10.7, y: 5.2, width: 2.5, length: 9.2, angle: -17),  // 중지
-            capsule(x: 6.2, y: 2.8, width: 2.3, length: 4.6, angle: 58),    // 엄지
+            capsule(x: 7.0, y: 5.6, width: 3.3, length: 9.4, angle: 21),    // 검지
+            capsule(x: 11.0, y: 5.6, width: 3.3, length: 9.4, angle: -21),  // 중지
         ]
         hand.forEach { $0.fill() }
         guard active else { return }
 
         // 손끝 바깥의 톡 표시 (작은 호)
-        for (cx, cy, start, end) in [(4.6, 14.1, 95.0, 190.0), (13.4, 14.1, -10.0, 85.0)]
+        for (cx, cy, start, end) in [(4.3, 12.6, 100.0, 195.0), (13.7, 12.6, -15.0, 80.0)]
                 as [(CGFloat, CGFloat, CGFloat, CGFloat)] {
             let arc = NSBezierPath()
-            arc.appendArc(withCenter: NSPoint(x: cx * s, y: cy * s), radius: 3.0 * s,
+            arc.appendArc(withCenter: NSPoint(x: cx * s, y: cy * s), radius: 3.4 * s,
                           startAngle: start, endAngle: end)
             arc.lineWidth = 1.1 * s; arc.lineCapStyle = .round
             arc.stroke()
