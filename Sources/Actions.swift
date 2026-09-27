@@ -76,11 +76,19 @@ struct Shortcut: Codable, Equatable {
 enum Action: Codable, Equatable {
     case preset(PresetAction)
     case shortcut(Shortcut)
+    /// 여러 단축키를 순서대로 (예: ⌘A → ⌘C)
+    case sequence([Shortcut])
+
+    /// 녹화한 단축키 목록으로 만들기 (하나면 단축키, 여러 개면 순서대로)
+    static func keys(_ list: [Shortcut]) -> Action {
+        list.count == 1 ? .shortcut(list[0]) : .sequence(list)
+    }
 
     var title: String {
         switch self {
-        case .preset(let p):   return p.title
-        case .shortcut(let s): return "단축키  \(s.display)"
+        case .preset(let p):    return p.title
+        case .shortcut(let s):  return "단축키  \(s.display)"
+        case .sequence(let l):  return "단축키  " + l.map(\.display).joined(separator: " → ")
         }
     }
 
@@ -88,6 +96,11 @@ enum Action: Codable, Equatable {
         switch self {
         case .preset(let p):   p.perform()
         case .shortcut(let s): s.perform()
+        case .sequence(let l):
+            // 앱이 앞의 키를 처리할 틈을 두고 차례로
+            for (i, s) in l.enumerated() {
+                DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(i * 120)) { s.perform() }
+            }
         }
     }
 }

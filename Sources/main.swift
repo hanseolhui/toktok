@@ -45,6 +45,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             DispatchQueue.main.async { Settings.shared.handle(g) }
         }
 
+        installEditMenu()
+
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         let menu = NSMenu(); menu.delegate = self
         statusItem.menu = menu
@@ -65,10 +67,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         multitouch = mt
         mt.restart()
 
+        // --settings: 실행하자마자 설정 창 열기 (스크린샷·테스트용)
+        if CommandLine.arguments.contains("--settings") { openSettings() }
+
         NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self?.multitouch?.restart() }
         }
+    }
+
+    /// 메뉴바 앱은 편집 메뉴가 없어 설정 창에서 ⌘C/⌘V 가 안 먹힘 → 보이지 않는 편집 메뉴 추가
+    private func installEditMenu() {
+        let main = NSMenu()
+        let editItem = NSMenuItem(); main.addItem(editItem)
+        let edit = NSMenu(title: "편집"); editItem.submenu = edit
+        edit.addItem(withTitle: "실행 취소", action: Selector(("undo:")), keyEquivalent: "z")
+        edit.addItem(withTitle: "잘라내기", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+        edit.addItem(withTitle: "복사", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+        edit.addItem(withTitle: "붙여넣기", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+        edit.addItem(withTitle: "전체 선택", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+        edit.addItem(withTitle: "창 닫기", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        NSApp.mainMenu = main
     }
 
     // 메뉴는 열 때마다 새로 그림
@@ -81,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(item(settings.enabled ? "켜짐" : "꺼짐", #selector(toggleEnabled), checked: settings.enabled))
         menu.addItem(item("설정…", #selector(openSettings), key: ","))
+        menu.addItem(item("사용 설명서", #selector(openGuide)))
         menu.addItem(.separator())
 
         if !AXIsProcessTrusted() {
@@ -88,10 +108,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         menu.addItem(item("트랙패드 다시 찾기 (\(multitouch?.deviceCount ?? 0)개 연결됨)", #selector(rescan)))
         menu.addItem(item("디버그 로그 기록", #selector(toggleDebug), checked: Log.enabled))
-        if Store.tipURL != nil {
-            menu.addItem(.separator())
-            menu.addItem(item("☕ 개발자에게 커피 사주기", #selector(tip)))
-        }
         menu.addItem(.separator())
         menu.addItem(item("톡톡 종료", #selector(quit), key: "q"))
     }
@@ -131,9 +147,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if Log.enabled { NSWorkspace.shared.open(Log.url.deletingLastPathComponent()) }
     }
 
+    @objc private func openGuide() { NSWorkspace.shared.open(Store.guideURL) }
     @objc private func rescan() { multitouch?.restart() }
     @objc private func openAccessibility() { requestAccessibility() }
-    @objc private func tip() { License.shared.openTip() }
     @objc private func quit() { NSApp.terminate(nil) }
 
     private func requestAccessibility() {

@@ -51,7 +51,8 @@ final class Settings: ObservableObject {
         guard enabled else { return }
         let s = setting(g)
         guard s.enabled else { return }
-        // Pro 가 아니면 동작은 항상 기본값
+        // 기본 제공 동작은 누구나, 직접 입력 단축키는 Pro 만 (아니면 기본 동작)
+        if case .preset = s.action { s.action.perform(); return }
         (License.shared.isPro ? s.action : g.defaultSetting.action).perform()
     }
 
