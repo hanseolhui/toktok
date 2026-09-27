@@ -23,6 +23,16 @@ done
 lipo -create "${BINS[@]}" -output "$APP/Contents/MacOS/TokTok"
 rm -f "${BINS[@]}"
 
+# 앱 아이콘 (assets/logo-1024.png → AppIcon.icns)
+if [ -f assets/logo-1024.png ]; then
+  ICONSET="$OUT/AppIcon.iconset"; rm -rf "$ICONSET"; mkdir -p "$ICONSET"
+  for s in 16 32 128 256 512; do
+    sips -z $s $s assets/logo-1024.png --out "$ICONSET/icon_${s}x${s}.png" >/dev/null
+    sips -z $((s*2)) $((s*2)) assets/logo-1024.png --out "$ICONSET/icon_${s}x${s}@2x.png" >/dev/null
+  done
+  iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"; rm -rf "$ICONSET"
+fi
+
 cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -37,6 +47,7 @@ cat > "$APP/Contents/Info.plist" <<EOF
   <key>CFBundleVersion</key><string>$VERSION</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>LSUIElement</key><true/>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>NSHumanReadableCopyright</key><string>MIT License</string>
 </dict>
 </plist>

@@ -15,10 +15,12 @@ enum Store {
     static let resendURL = server.appendingPathComponent("resend")
     /// 사용 설명서
     static let guideURL = server.appendingPathComponent("guide")
+    /// 구매 페이지 (언어에 맞게)
+    static var buyPageURL: URL { URL(string: AppLanguage.shared.isKorean ? "https://toktok.seoriarts.com/buy?lang=ko#buy" : "https://toktok.seoriarts.com/en#buy")! }
     /// 개발자에게 커피 사주기
     static let tipURL: URL? = URL(string: "https://paypal.me/hanseolhui")
     /// 가격 표시
-    static let priceText = "평생 $2.99 · 맥 3대"
+    static var priceText: String { t("평생 ₩4,900 · 맥 3대", "₩4,900 (about US$3.99) lifetime · 3 Macs") }
     /// 기기 인증서 서명 확인용 공개 키 (서버의 LICENSE_PRIVATE_KEY 짝)
     static let publicKey = "3LB12Dy_fPtx7EnTk-xIfPF_vcToLsKTmDmVzhUuFQQ"
 
@@ -88,12 +90,12 @@ final class License: ObservableObject {
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         guard let (data, resp) = try? await URLSession.shared.data(for: req) else {
-            throw ServerError(message: "인터넷 연결을 확인하고 다시 시도해 주세요.")
+            throw ServerError(message: t("인터넷 연결을 확인하고 다시 시도해 주세요.", "Please check your internet connection and try again."))
         }
         let r = (try? JSONDecoder().decode(Response.self, from: data))
-            ?? Response(certificate: nil, devices: nil, limit: nil, error: "서버 응답을 읽지 못했어요.")
+            ?? Response(certificate: nil, devices: nil, limit: nil, error: t("서버 응답을 읽지 못했어요.", "Couldn’t read the server response."))
         if let http = resp as? HTTPURLResponse, http.statusCode >= 400 {
-            throw ServerError(message: r.error ?? "오류가 났어요 (\(http.statusCode))", devices: r.devices ?? [])
+            throw ServerError(message: r.error ?? t("오류가 났어요 (\(http.statusCode))", "Something went wrong (\(http.statusCode))"), devices: r.devices ?? [])
         }
         return r
     }
@@ -103,7 +105,7 @@ final class License: ObservableObject {
     func activate(code: String) async throws {
         let r = try await call("activate", ["code": code, "deviceId": License.deviceID, "deviceName": License.deviceName])
         guard let cert = r.certificate, let p = License.verify(cert) else {
-            throw ServerError(message: "인증서를 확인하지 못했어요. 톡톡을 최신 버전으로 업데이트해 주세요.")
+            throw ServerError(message: t("인증서를 확인하지 못했어요. 톡톡을 최신 버전으로 업데이트해 주세요.", "Couldn’t verify the certificate. Please update TokTok to the latest version."))
         }
         UserDefaults.standard.set(cert, forKey: "license.certificate")
         payload = p
@@ -145,7 +147,7 @@ final class License: ObservableObject {
         return p
     }
 
-    func openCheckout() { if let u = Store.checkoutURL { NSWorkspace.shared.open(u) } }
+    func openCheckout() { if Store.checkoutURL != nil { NSWorkspace.shared.open(Store.buyPageURL) } }
     func openTip() { if let u = Store.tipURL { NSWorkspace.shared.open(u) } }
     func openResend() { NSWorkspace.shared.open(Store.resendURL) }
 }

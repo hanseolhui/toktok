@@ -5,13 +5,15 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var settings = Settings.shared
     @ObservedObject var license = License.shared
+    @ObservedObject var language = AppLanguage.shared
+    @ObservedObject var updater = Updater.shared
     @State private var confirmReset = false
 
     var body: some View {
         ScrollViewReader { proxy in
         Form {
             ForEach(Gesture.Group.allCases, id: \.self) { group in
-                Section(group.rawValue) {
+                Section(group.title) {
                     ForEach(Gesture.allCases.filter { $0.group == group }) { g in
                         GestureRow(gesture: g).id(g.id)
                     }
@@ -20,19 +22,26 @@ struct SettingsView: View {
 
             Section {
                 HStack {
-                    Text("제스처 하는 법, 동작 바꾸기, Pro 등록, 문제 해결")
+                    Text(t("제스처 하는 법, 동작 바꾸기, Pro 등록, 문제 해결", "How to use gestures, change actions, register Pro, troubleshooting"))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("📖 사용 설명서") { NSWorkspace.shared.open(Store.guideURL) }
+                    Button(t("📖 사용 설명서", "📖 User guide")) { NSWorkspace.shared.open(Store.guideURL) }
                 }
-                Toggle("로그인 시 자동 실행", isOn: Binding(get: { settings.launchAtLogin },
+                Toggle(t("로그인 시 자동 실행", "Launch at login"), isOn: Binding(get: { settings.launchAtLogin },
                                                         set: { settings.launchAtLogin = $0 }))
                 HStack {
-                    Text("사용 체크와 동작을 처음 상태로 돌려요")
+                    Text(t("사용 체크와 동작을 처음 상태로 돌려요", "Restore gesture checkboxes and actions"))
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("기본 설정으로 되돌리기") { confirmReset = true }
+                    Button(t("기본 설정으로 되돌리기", "Reset to defaults")) { confirmReset = true }
                 }
+            }
+
+            Section {
+                Picker(t("언어", "Language"), selection: $language.choice) {
+                    ForEach(AppLanguage.Choice.allCases) { Text($0.title).tag($0) }
+                }
+                UpdateRow()
             }
 
             if Store.sellsPro { ProSection().id("pro") }
@@ -40,9 +49,9 @@ struct SettingsView: View {
             if Store.tipURL != nil {
                 Section {
                     HStack {
-                        Text("톡톡이 마음에 드셨다면")
+                        Text(t("톡톡이 마음에 드셨다면", "Enjoying TokTok?"))
                         Spacer()
-                        Button("☕ 개발자에게 커피 사주기") { license.openTip() }
+                        Button(t("☕ 개발자에게 커피 사주기", "☕ Buy the developer a coffee")) { license.openTip() }
                     }
                 }
             }
@@ -58,8 +67,8 @@ struct SettingsView: View {
         }
         }
         .frame(width: 600, height: 680)
-        .confirmationDialog("모든 제스처를 기본 설정으로 되돌릴까요?", isPresented: $confirmReset) {
-            Button("되돌리기", role: .destructive) { settings.resetToDefaults() }
+        .confirmationDialog(t("모든 제스처를 기본 설정으로 되돌릴까요?", "Reset all gestures to defaults?"), isPresented: $confirmReset) {
+            Button(t("되돌리기", "Reset"), role: .destructive) { settings.resetToDefaults() }
         }
     }
 }
@@ -74,6 +83,7 @@ struct GestureRow: View {
     let gesture: Gesture
     @ObservedObject var settings = Settings.shared
     @ObservedObject var license = License.shared
+    @ObservedObject var language = AppLanguage.shared
     @State private var recording = false
 
     var body: some View {
@@ -96,9 +106,9 @@ struct GestureRow: View {
                 }
                 Divider()
                 if license.isPro {
-                    Button("직접 입력 (단축키 녹화)…") { recording = true }
+                    Button(t("직접 입력 (단축키 녹화)…", "Custom (record shortcut)…")) { recording = true }
                 } else {
-                    Button("🔒 직접 입력 (단축키 녹화) — Pro") { license.openCheckout() }
+                    Button(t("🔒 직접 입력 (단축키 녹화) — Pro", "🔒 Custom (record shortcut) — Pro")) { license.openCheckout() }
                 }
             }
             .frame(width: 230)
@@ -123,13 +133,13 @@ struct ShortcutRecorder: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("원하는 단축키를 누르세요").font(.headline)
-            Text("여러 개를 누르면 순서대로 실행돼요 (최대 \(maxKeys)개)")
+            Text(t("원하는 단축키를 누르세요", "Press the shortcut you want")).font(.headline)
+            Text(t("여러 개를 누르면 순서대로 실행돼요 (최대 \(maxKeys)개)", "Press several to run them in order (up to \(maxKeys))"))
                 .font(.caption).foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
                 if keys.isEmpty {
-                    Text("예: ⌘⇧T  또는  ⌘A → ⌘C").foregroundStyle(.tertiary)
+                    Text(t("예: ⌘⇧T  또는  ⌘A → ⌘C", "e.g. ⌘⇧T  or  ⌘A → ⌘C")).foregroundStyle(.tertiary)
                 } else {
                     ForEach(Array(keys.enumerated()), id: \.offset) { i, k in
                         if i > 0 { Image(systemName: "arrow.right").font(.caption).foregroundStyle(.secondary) }
@@ -142,14 +152,14 @@ struct ShortcutRecorder: View {
             .frame(minHeight: 30)
 
             HStack {
-                Button("지우기") { keys.removeAll() }.disabled(keys.isEmpty)
+                Button(t("지우기", "Clear")) { keys.removeAll() }.disabled(keys.isEmpty)
                 Spacer()
-                Button("취소") { finish(nil) }
-                Button("완료") { finish(keys) }
+                Button(t("취소", "Cancel")) { finish(nil) }
+                Button(t("완료", "Done")) { finish(keys) }
                     .keyboardShortcut(.defaultAction)
                     .disabled(keys.isEmpty)
             }
-            Text("⌘Space, ⌘Tab 처럼 macOS가 먼저 가져가는 단축키는 녹화되지 않아요.")
+            Text(t("⌘Space, ⌘Tab 처럼 macOS가 먼저 가져가는 단축키는 녹화되지 않아요.", "Shortcuts macOS grabs first, like ⌘Space or ⌘Tab, can’t be recorded."))
                 .font(.caption2).foregroundStyle(.tertiary)
         }
         .padding(20)
@@ -173,6 +183,7 @@ struct ShortcutRecorder: View {
 
 struct ProSection: View {
     @ObservedObject var license = License.shared
+    @ObservedObject var language = AppLanguage.shared
     @State private var code = ""
     @State private var error: String?
     @State private var busy = false
@@ -180,10 +191,10 @@ struct ProSection: View {
     @State private var devices: [License.Device] = []
 
     var body: some View {
-        Section("톡톡 Pro") {
+        Section(t("톡톡 Pro", "TokTok Pro")) {
             if license.payload != nil || Demo.on {
                 HStack {
-                    Label("Pro 사용 중 — \(Demo.on ? "you@example.com" : license.email ?? "")", systemImage: "checkmark.seal.fill")
+                    Label(t("Pro 사용 중 — ", "Pro active — ") + "\(Demo.on ? "you@example.com" : license.email ?? "")", systemImage: "checkmark.seal.fill")
                     Spacer()
                     Text(Demo.on ? "TOK-A2B3-C4D5-E6F7" : license.code ?? "").font(.caption.monospaced()).foregroundStyle(.secondary).textSelection(.enabled)
                 }
@@ -191,27 +202,27 @@ struct ProSection: View {
             } else {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("원하는 단축키를 직접 녹화해 제스처에 연결 (여러 키 순서 실행)")
+                        Text(t("원하는 단축키를 직접 녹화해 제스처에 연결 (여러 키 순서 실행)", "Record your own shortcuts for gestures (including key sequences)"))
                         Text(Store.priceText).font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Pro 구매") { license.openCheckout() }
+                    Button(t("Pro 구매", "Get Pro")) { license.openCheckout() }
                         .buttonStyle(.borderedProminent)
                 }
                 HStack {
-                    TextField("라이선스 코드 (TOK-XXXX-XXXX-XXXX)", text: $code)
+                    TextField(t("라이선스 코드 (TOK-XXXX-XXXX-XXXX)", "License code (TOK-XXXX-XXXX-XXXX)"), text: $code)
                         .textFieldStyle(.roundedBorder)
                         .onChange(of: code) { new in
                             let f = LicenseCode.format(new)
                             if f != new { code = f }
                         }
                         .onSubmit(register)
-                    Button(busy ? "등록 중…" : "등록", action: register)
+                    Button(busy ? t("등록 중…", "Registering…") : t("등록", "Register"), action: register)
                         .disabled(code.isEmpty || busy)
                 }
                 if let error { Text(error).font(.caption).foregroundStyle(.red) }
                 if !devices.isEmpty { deviceList(code: code) }
-                Button("코드를 잃어버렸어요") { license.openResend() }
+                Button(t("코드를 잃어버렸어요", "I lost my code")) { license.openResend() }
                     .buttonStyle(.link).font(.caption)
             }
         }
@@ -227,12 +238,12 @@ struct ProSection: View {
             HStack {
                 Image(systemName: "laptopcomputer")
                 Text(d.device_name ?? "Mac")
-                if d.isThisMac { Text("이 맥").font(.caption).padding(.horizontal, 6).background(.quaternary, in: Capsule()) }
+                if d.isThisMac { Text(t("이 맥", "This Mac")).font(.caption).padding(.horizontal, 6).background(.quaternary, in: Capsule()) }
                 Spacer()
-                Button("해제") { release(d, code: code) }.disabled(busy)
+                Button(t("해제", "Remove")) { release(d, code: code) }.disabled(busy)
             }
         }
-        Text("맥 3대까지 쓸 수 있어요. 포맷 후 같은 맥에 다시 등록할 땐 칸을 차지하지 않아요.")
+        Text(t("맥 3대까지 쓸 수 있어요. 포맷 후 같은 맥에 다시 등록할 땐 칸을 차지하지 않아요.", "Use on up to 3 Macs. Re-registering the same Mac after a reinstall doesn’t use another slot."))
             .font(.caption).foregroundStyle(.secondary)
     }
 
@@ -253,16 +264,58 @@ struct ProSection: View {
 
     private func release(_ d: License.Device, code: String?) {
         let alert = NSAlert()
-        alert.messageText = "‘\(d.device_name ?? "Mac")’을(를) 해제할까요?"
-        alert.informativeText = d.isThisMac ? "이 맥에서 Pro 기능이 꺼져요. 코드를 다시 입력하면 언제든 다시 등록할 수 있어요."
-                                            : "그 맥에서는 다음 확인 때 Pro 기능이 꺼져요."
-        alert.addButton(withTitle: "해제"); alert.addButton(withTitle: "취소")
+        alert.messageText = t("‘\(d.device_name ?? "Mac")’을(를) 해제할까요?", "Remove ‘\(d.device_name ?? "Mac")’?")
+        alert.informativeText = d.isThisMac ? t("이 맥에서 Pro 기능이 꺼져요. 코드를 다시 입력하면 언제든 다시 등록할 수 있어요.", "Pro will turn off on this Mac. You can register again anytime with your code.")
+                                            : t("그 맥에서는 다음 확인 때 Pro 기능이 꺼져요.", "Pro will turn off on that Mac at its next check.")
+        alert.addButton(withTitle: t("해제", "Remove")); alert.addButton(withTitle: t("취소", "Cancel"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         busy = true
         Task {
             do { devices = try await license.deactivate(deviceID: d.device_id, code: code); error = nil }
             catch { self.error = error.localizedDescription }
             busy = false
+        }
+    }
+}
+
+/// 업데이트 확인 · 설치 (한 번에)
+struct UpdateRow: View {
+    @ObservedObject var updater = Updater.shared
+    @ObservedObject var language = AppLanguage.shared
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(t("업데이트", "Updates"))
+                Text(status).font(.caption).foregroundStyle(isError ? .red : .secondary)
+            }
+            Spacer()
+            switch updater.state {
+            case .available(let v, _):
+                Button(t("\(v) 설치하고 다시 시작", "Install \(v) and relaunch")) { Task { await updater.install() } }
+                    .buttonStyle(.borderedProminent)
+            case .checking, .installing:
+                ProgressView().controlSize(.small)
+            case .failed:
+                Button(t("웹에서 받기", "Download")) { updater.openReleasePage() }
+                Button(t("다시 확인", "Check again")) { Task { await updater.check() } }
+            default:
+                Button(t("업데이트 확인", "Check for updates")) { Task { await updater.check() } }
+            }
+        }
+    }
+
+    private var isError: Bool { if case .failed = updater.state { return true }; return false }
+
+    private var status: String {
+        let cur = t("현재 버전 ", "Current version ") + Updater.current
+        switch updater.state {
+        case .idle:                   return cur
+        case .checking:               return t("확인하는 중…", "Checking…")
+        case .upToDate:               return cur + t(" · 최신 버전이에요", " · You're up to date")
+        case .available(let v, _):    return cur + t(" · 새 버전 \(v) 이 있어요", " · Version \(v) is available")
+        case .installing:             return t("받아서 설치하는 중… 곧 다시 시작돼요", "Downloading and installing… TokTok will relaunch")
+        case .failed(let m):          return m
         }
     }
 }

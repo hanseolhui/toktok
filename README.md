@@ -50,13 +50,14 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 - 두 손가락 탭(우클릭), 스크롤, 드래그와는 헷갈리지 않게 걸러요
 - 모서리 톡은 '탭하여 클릭'을 켜 두면 클릭도 함께 일어나요
 - 설정 창의 **기본 설정으로 되돌리기** 로 언제든 처음 상태로
+- 설정에서 **언어(한국어 / English)** 를 바꿀 수 있고, **업데이트 확인 → 설치하고 다시 시작** 으로 한 번에 최신 버전이 돼요
 
-## ⭐ 톡톡 Pro — 평생 $2.99 · 맥 3대
+## ⭐ 톡톡 Pro — 평생 ₩4,900 (해외 US$3.99) · 맥 3대
 
 무료로도 제스처마다 **기본 제공 동작 13가지**를 자유롭게 고를 수 있어요.
 Pro는 여기에 없는 **나만의 단축키를 직접 녹화**해서 연결해요. 여러 키를 순서대로 실행할 수도 있어요 (⌘A → ⌘C).
 
-1. [toktok.seoriarts.com](https://toktok.seoriarts.com/#buy) 에서 구매 (PayPal · 카드)
+1. [toktok.seoriarts.com](https://toktok.seoriarts.com/#buy) 에서 구매 (한국 카드 · PayPal)
 2. 화면과 메일로 받은 **라이선스 코드**를 톡톡 설정 → 톡톡 Pro 에 붙여넣고 **등록**
 3. 한 번 등록하면 인터넷 없이 동작. 맥 3대까지, 포맷해도 같은 코드로 다시 등록
 

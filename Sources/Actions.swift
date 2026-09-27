@@ -13,19 +13,19 @@ enum PresetAction: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .back:           return "뒤로 가기  ⌘["
-        case .forward:        return "앞으로 가기  ⌘]"
-        case .prevTab:        return "이전 탭  ⌃⇧⇥"
-        case .nextTab:        return "다음 탭  ⌃⇥"
-        case .middleClick:    return "가운데 클릭 (링크를 새 탭으로)"
-        case .closeTab:       return "탭·창 닫기  ⌘W"
-        case .reopenTab:      return "닫은 탭 다시 열기  ⌘⇧T"
-        case .newTab:         return "새 탭  ⌘T"
-        case .windowLeft:     return "창을 왼쪽 반으로"
-        case .windowRight:    return "창을 오른쪽 반으로"
-        case .windowFill:     return "창을 화면 가득"
+        case .back:           return t("뒤로 가기  ⌘[", "Back  ⌘[")
+        case .forward:        return t("앞으로 가기  ⌘]", "Forward  ⌘]")
+        case .prevTab:        return t("이전 탭  ⌃⇧⇥", "Previous tab  ⌃⇧⇥")
+        case .nextTab:        return t("다음 탭  ⌃⇥", "Next tab  ⌃⇥")
+        case .middleClick:    return t("가운데 클릭 (링크를 새 탭으로)", "Middle click (open link in new tab)")
+        case .closeTab:       return t("탭·창 닫기  ⌘W", "Close tab/window  ⌘W")
+        case .reopenTab:      return t("닫은 탭 다시 열기  ⌘⇧T", "Reopen closed tab  ⌘⇧T")
+        case .newTab:         return t("새 탭  ⌘T", "New tab  ⌘T")
+        case .windowLeft:     return t("창을 왼쪽 반으로", "Window to left half")
+        case .windowRight:    return t("창을 오른쪽 반으로", "Window to right half")
+        case .windowFill:     return t("창을 화면 가득", "Fill screen with window")
         case .missionControl: return "Mission Control"
-        case .appWindows:     return "앱 윈도우 보기"
+        case .appWindows:     return t("앱 윈도우 보기", "App windows")
         }
     }
 
@@ -87,8 +87,8 @@ enum Action: Codable, Equatable {
     var title: String {
         switch self {
         case .preset(let p):    return p.title
-        case .shortcut(let s):  return "단축키  \(s.display)"
-        case .sequence(let l):  return "단축키  " + l.map(\.display).joined(separator: " → ")
+        case .shortcut(let s):  return t("단축키  ", "Shortcut  ") + s.display
+        case .sequence(let l):  return t("단축키  ", "Shortcut  ") + l.map(\.display).joined(separator: " → ")
         }
     }
 

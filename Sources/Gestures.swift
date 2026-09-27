@@ -12,33 +12,42 @@ enum Gesture: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .tipTapLeft:        return "한 손가락 대고 왼쪽 톡"
-        case .tipTapRight:       return "한 손가락 대고 오른쪽 톡"
-        case .twoFixTapLeft:     return "두 손가락 대고 왼쪽 톡"
-        case .twoFixTapRight:    return "두 손가락 대고 오른쪽 톡"
-        case .threeFingerTap:    return "세 손가락 탭"
-        case .fourFingerTap:     return "네 손가락 탭"
-        case .cornerTopLeft:     return "왼쪽 위 모서리 톡"
-        case .cornerTopRight:    return "오른쪽 위 모서리 톡"
-        case .cornerBottomLeft:  return "왼쪽 아래 모서리 톡"
-        case .cornerBottomRight: return "오른쪽 아래 모서리 톡"
+        case .tipTapLeft:        return t("한 손가락 대고 왼쪽 톡", "One finger rest, tap left")
+        case .tipTapRight:       return t("한 손가락 대고 오른쪽 톡", "One finger rest, tap right")
+        case .twoFixTapLeft:     return t("두 손가락 대고 왼쪽 톡", "Two fingers rest, tap left")
+        case .twoFixTapRight:    return t("두 손가락 대고 오른쪽 톡", "Two fingers rest, tap right")
+        case .threeFingerTap:    return t("세 손가락 탭", "Three-finger tap")
+        case .fourFingerTap:     return t("네 손가락 탭", "Four-finger tap")
+        case .cornerTopLeft:     return t("왼쪽 위 모서리 톡", "Top-left corner tap")
+        case .cornerTopRight:    return t("오른쪽 위 모서리 톡", "Top-right corner tap")
+        case .cornerBottomLeft:  return t("왼쪽 아래 모서리 톡", "Bottom-left corner tap")
+        case .cornerBottomRight: return t("오른쪽 아래 모서리 톡", "Bottom-right corner tap")
         }
     }
 
     var hint: String {
         switch self {
-        case .tipTapLeft:     return "오른손 중지를 대고 검지를 톡"
-        case .tipTapRight:    return "오른손 검지를 대고 중지를 톡"
-        case .twoFixTapLeft:  return "중지·약지를 대고 검지를 톡"
-        case .twoFixTapRight: return "검지·중지를 대고 약지를 톡"
-        case .threeFingerTap: return "세 손가락으로 동시에 톡"
-        case .fourFingerTap:  return "네 손가락으로 동시에 톡"
+        case .tipTapLeft:     return t("오른손 중지를 대고 검지를 톡", "Rest right middle finger, tap index")
+        case .tipTapRight:    return t("오른손 검지를 대고 중지를 톡", "Rest right index finger, tap middle")
+        case .twoFixTapLeft:  return t("중지·약지를 대고 검지를 톡", "Rest middle + ring, tap index")
+        case .twoFixTapRight: return t("검지·중지를 대고 약지를 톡", "Rest index + middle, tap ring")
+        case .threeFingerTap: return t("세 손가락으로 동시에 톡", "Tap with three fingers at once")
+        case .fourFingerTap:  return t("네 손가락으로 동시에 톡", "Tap with four fingers at once")
         case .cornerTopLeft, .cornerTopRight, .cornerBottomLeft, .cornerBottomRight:
-            return "한 손가락으로 모서리를 톡 (탭하여 클릭을 켜 두면 클릭도 함께 돼요)"
+            return t("한 손가락으로 모서리를 톡 (탭하여 클릭을 켜 두면 클릭도 함께 돼요)", "Tap a corner with one finger (also clicks if Tap to click is on)")
         }
     }
 
-    enum Group: String, CaseIterable { case tipTap = "대고 톡", tap = "여러 손가락 탭", corner = "모서리 톡" }
+    enum Group: String, CaseIterable {
+        case tipTap, tap, corner
+        var title: String {
+            switch self {
+            case .tipTap: return t("대고 톡", "Rest & tap")
+            case .tap:    return t("여러 손가락 탭", "Multi-finger tap")
+            case .corner: return t("모서리 톡", "Corner tap")
+            }
+        }
+    }
     var group: Group {
         switch self {
         case .tipTapLeft, .tipTapRight, .twoFixTapLeft, .twoFixTapRight: return .tipTap

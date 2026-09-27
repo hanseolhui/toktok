@@ -61,11 +61,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         guard let mt = Multitouch() else {
-            alert("트랙패드에 연결할 수 없어요", "이 macOS 버전에서는 톡톡이 동작하지 않을 수 있어요.")
+            alert(t("트랙패드에 연결할 수 없어요", "Can’t connect to the trackpad"), t("이 macOS 버전에서는 톡톡이 동작하지 않을 수 있어요.", "TokTok may not work on this version of macOS."))
             return
         }
         multitouch = mt
         mt.restart()
+
+        // 새 버전이 있는지 조용히 확인 (있으면 메뉴·설정에 표시)
+        Task { await Updater.shared.check(silent: true) }
 
         // --settings: 실행하자마자 설정 창 열기 (스크린샷·테스트용)
         if CommandLine.arguments.contains("--settings") { openSettings() }
@@ -80,7 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func installEditMenu() {
         let main = NSMenu()
         let editItem = NSMenuItem(); main.addItem(editItem)
-        let edit = NSMenu(title: "편집"); editItem.submenu = edit
+        let edit = NSMenu(title: "Edit"); editItem.submenu = edit
         edit.addItem(withTitle: "실행 취소", action: Selector(("undo:")), keyEquivalent: "z")
         edit.addItem(withTitle: "잘라내기", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
         edit.addItem(withTitle: "복사", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
@@ -93,23 +96,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // 메뉴는 열 때마다 새로 그림
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
-        let header = NSMenuItem(title: "중지 대고 검지 톡: 뒤로 · 검지 대고 중지 톡: 앞으로", action: nil, keyEquivalent: "")
+        let header = NSMenuItem(title: t("톡톡", "TokTok") + " " + Updater.current, action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
         menu.addItem(.separator())
 
-        menu.addItem(item(settings.enabled ? "켜짐" : "꺼짐", #selector(toggleEnabled), checked: settings.enabled))
-        menu.addItem(item("설정…", #selector(openSettings), key: ","))
-        menu.addItem(item("사용 설명서", #selector(openGuide)))
+        menu.addItem(item(settings.enabled ? t("켜짐", "On") : t("꺼짐", "Off"), #selector(toggleEnabled), checked: settings.enabled))
+        menu.addItem(item(t("설정…", "Settings…"), #selector(openSettings), key: ","))
+        menu.addItem(item(t("사용 설명서", "User guide"), #selector(openGuide)))
+        if let v = Updater.shared.availableVersion {
+            menu.addItem(item(t("🔔 새 버전 \(v) 설치…", "🔔 Install version \(v)…"), #selector(openSettings)))
+        }
         menu.addItem(.separator())
 
         if !AXIsProcessTrusted() {
-            menu.addItem(item("⚠️ 손쉬운 사용 권한 허용하기…", #selector(openAccessibility)))
+            menu.addItem(item(t("⚠️ 손쉬운 사용 권한 허용하기…", "⚠️ Allow Accessibility access…"), #selector(openAccessibility)))
         }
-        menu.addItem(item("트랙패드 다시 찾기 (\(multitouch?.deviceCount ?? 0)개 연결됨)", #selector(rescan)))
-        menu.addItem(item("디버그 로그 기록", #selector(toggleDebug), checked: Log.enabled))
+        menu.addItem(item(t("트랙패드 다시 찾기 (\(multitouch?.deviceCount ?? 0)개 연결됨)", "Rescan trackpads (\(multitouch?.deviceCount ?? 0) connected)"), #selector(rescan)))
+        menu.addItem(item(t("디버그 로그 기록", "Debug logging"), #selector(toggleDebug), checked: Log.enabled))
         menu.addItem(.separator())
-        menu.addItem(item("톡톡 종료", #selector(quit), key: "q"))
+        menu.addItem(item(t("톡톡 종료", "Quit TokTok"), #selector(quit), key: "q"))
     }
 
     private func item(_ title: String, _ action: Selector, checked: Bool = false, key: String = "") -> NSMenuItem {
@@ -131,12 +137,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func openSettings() {
         if settingsWindow == nil {
             let w = NSWindow(contentViewController: NSHostingController(rootView: SettingsView()))
-            w.title = "톡톡 설정"
+            w.title = t("톡톡 설정", "TokTok Settings")
             w.styleMask = [.titled, .closable, .miniaturizable]
             w.isReleasedWhenClosed = false
             w.center()
             settingsWindow = w
         }
+        settingsWindow?.title = t("톡톡 설정", "TokTok Settings")
         NSApp.activate(ignoringOtherApps: true)
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
