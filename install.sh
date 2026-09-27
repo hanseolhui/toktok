@@ -30,8 +30,10 @@ bash "$SRC_DIR/build.sh" "$DEST" >/dev/null
 [ -n "$TMP" ] && rm -rf "$TMP"
 ok "설치 완료: $DEST/TokTok.app"
 
-[ "${TOKTOK_NO_OPEN:-0}" = "1" ] || open "$DEST/TokTok.app"
-ok "실행 완료 (메뉴바의 손가락 아이콘)"
+if [ "${TOKTOK_NO_OPEN:-0}" != "1" ]; then
+  open "$DEST/TokTok.app"
+  ok "실행 완료 (메뉴바의 손가락 아이콘)"
+fi
 echo
 echo "  처음이면 '손쉬운 사용' 권한을 허용해 주세요:"
 echo "   • 시스템 설정 > 개인정보 보호 및 보안 > 손쉬운 사용 > TokTok 켜기"
