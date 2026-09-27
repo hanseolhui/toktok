@@ -20,6 +20,23 @@ struct SettingsView: View {
                 }
             }
 
+            Section(t("가장자리 슬라이더", "Edge sliders")) {
+                ForEach(EdgeSide.allCases) { SliderRow(side: $0) }
+                Text(t("트랙패드 왼쪽·오른쪽 끝에 손가락을 대고 위아래로 쓸어요. 가로 스크롤·확대/축소·단축키는 Pro.",
+                       "Rest a finger on the far left/right edge and slide up or down. Horizontal scroll, zoom and shortcuts are Pro."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            Section(t("⭐ 스와이프 앱 전환 (Pro)", "⭐ Swipe to switch apps (Pro)")) {
+                ProToggle(title: t("한 손가락 대고 두 손가락을 좌우로 → 앱 전환 (⌘Tab)", "Rest one finger, slide two fingers sideways → switch apps (⌘Tab)"),
+                          isOn: Binding(get: { settings.appSwitch }, set: { settings.appSwitch = $0 }))
+                Text(t("시스템 설정 → 트랙패드 → 추가 제스처의 '전체 화면 앱 쓸어넘기기'가 세 손가락이면 네 손가락으로 바꿔 주세요.",
+                       "If System Settings → Trackpad → More Gestures uses three fingers for swiping between full-screen apps, switch it to four."))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            ExcludedAppsSection()
+
             Section {
                 HStack {
                     Text(t("제스처 하는 법, 동작 바꾸기, Pro 등록, 문제 해결", "How to use gestures, change actions, register Pro, troubleshooting"))
@@ -27,6 +44,15 @@ struct SettingsView: View {
                     Spacer()
                     Button(t("📖 사용 설명서", "📖 User guide")) { NSWorkspace.shared.open(Store.guideURL) }
                 }
+                Toggle(isOn: $settings.typingGuard) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(t("타자 칠 때는 잠깐 쉬기", "Pause while typing"))
+                        Text(t("키보드를 누른 뒤 0.5초 동안은 제스처를 무시해요 (손바닥이 닿아 잘못 실행되는 것 방지)",
+                               "Ignores gestures for 0.5 s after a key press, so a resting palm won't trigger anything"))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Toggle(t("제스처가 인식되면 트랙패드 진동", "Haptic feedback when a gesture is recognized"), isOn: $settings.haptic)
                 Toggle(t("로그인 시 자동 실행", "Launch at login"), isOn: Binding(get: { settings.launchAtLogin },
                                                         set: { settings.launchAtLogin = $0 }))
                 HStack {
@@ -45,6 +71,7 @@ struct SettingsView: View {
             }
 
             TroubleshootSection()
+            FeedbackSection()
 
             if Store.sellsPro { ProSection().id("pro") }
 
@@ -59,6 +86,11 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
+        // 언어를 바꾸면 제목까지 새로 그리기
+        .id(language.choice)
+        .onChange(of: language.choice) { _ in
+            DispatchQueue.main.async { NSApp.windows.first { $0.contentViewController is NSHostingController<SettingsView> }?.title = t("톡톡 설정", "TokTok Settings") }
+        }
         .onAppear {
             // --scroll-pro: 스크린샷용으로 Pro 영역부터 보이게
             if CommandLine.arguments.contains("--scroll-pro") {
@@ -91,9 +123,12 @@ struct GestureRow: View {
     var body: some View {
         let s = settings.setting(gesture)
         HStack(alignment: .center, spacing: 12) {
-            Toggle(isOn: Binding(get: { s.enabled }, set: { settings.setEnabled(gesture, $0) })) {
+            let locked = gesture.isPro && !license.isPro
+            Toggle(isOn: Binding(get: { s.enabled && !locked }, set: { on in
+                if locked { license.openCheckout() } else { settings.setEnabled(gesture, on) }
+            })) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(gesture.title)
+                    Text(gesture.title + (locked ? "  🔒" : ""))
                     Text(gesture.hint).font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -103,8 +138,12 @@ struct GestureRow: View {
 
             // 기본 제공 동작은 무료, 직접 입력(단축키 녹화)은 Pro
             Menu(effectiveTitle(s)) {
-                ForEach(PresetAction.allCases) { p in
-                    Button(p.title) { settings.setAction(gesture, .preset(p)) }
+                ForEach(PresetAction.Category.allCases, id: \.self) { c in
+                    Section(c.title) {
+                        ForEach(PresetAction.allCases.filter { $0.category == c }) { p in
+                            Button(p.title) { settings.setAction(gesture, .preset(p)) }
+                        }
+                    }
                 }
                 Divider()
                 if license.isPro {
@@ -114,7 +153,7 @@ struct GestureRow: View {
                 }
             }
             .frame(width: 230)
-            .disabled(!s.enabled)
+            .disabled(!s.enabled || locked)
             .popover(isPresented: $recording) {
                 ShortcutRecorder { keys in
                     if let keys, !keys.isEmpty { settings.setAction(gesture, .keys(keys)) }
@@ -275,6 +314,177 @@ struct ProSection: View {
         Task {
             do { devices = try await license.deactivate(deviceID: d.device_id, code: code); error = nil }
             catch { self.error = error.localizedDescription }
+            busy = false
+        }
+    }
+}
+
+/// Pro 기능 켜기 (Pro 가 아니면 구매 페이지로)
+struct ProToggle: View {
+    let title: String
+    let isOn: Binding<Bool>
+    @ObservedObject var license = License.shared
+
+    var body: some View {
+        Toggle(isOn: Binding(get: { isOn.wrappedValue && license.isPro }, set: { on in
+            if license.isPro { isOn.wrappedValue = on } else { license.openCheckout() }
+        })) { Text(title + (license.isPro ? "" : "  🔒")) }
+    }
+}
+
+/// 가장자리 슬라이더 한 줄 (켜기 + 조절할 것)
+struct SliderRow: View {
+    let side: EdgeSide
+    @ObservedObject var settings = Settings.shared
+    @ObservedObject var license = License.shared
+    @ObservedObject var language = AppLanguage.shared
+    @State private var recording = false
+
+    var body: some View {
+        let s = settings.slider(side)
+        HStack {
+            Toggle(side.title, isOn: Binding(get: { s.enabled }, set: { var n = s; n.enabled = $0; settings.setSlider(side, n) }))
+                .toggleStyle(.checkbox)
+            Spacer()
+            Menu(s.mode.isPro && !license.isPro ? SliderSetting.default(side).mode.title : s.mode.title) {
+                ForEach(SliderMode.presets, id: \.title) { m in
+                    if m.isPro && !license.isPro {
+                        Button("🔒 " + m.title + " — Pro") { license.openCheckout() }
+                    } else {
+                        Button(m.title) { var n = s; n.mode = m; settings.setSlider(side, n) }
+                    }
+                }
+                Divider()
+                if license.isPro {
+                    Button(t("직접 입력 (위·아래 단축키 녹화)…", "Custom (record up/down shortcuts)…")) { recording = true }
+                } else {
+                    Button(t("🔒 직접 입력 — Pro", "🔒 Custom — Pro")) { license.openCheckout() }
+                }
+            }
+            .frame(width: 230)
+            .disabled(!s.enabled)
+            .popover(isPresented: $recording) {
+                SliderRecorder { up, down in
+                    if let up, let down { var n = s; n.mode = .custom(up: up, down: down); settings.setSlider(side, n) }
+                    recording = false
+                }
+            }
+        }
+    }
+}
+
+/// 슬라이더 직접 입력: 위로 쓸 때 → 아래로 쓸 때 단축키를 차례로 녹화
+struct SliderRecorder: View {
+    let done: ([Shortcut]?, [Shortcut]?) -> Void
+    @State private var up: [Shortcut]?
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(up == nil ? t("① 위로 쓸 때", "① Sliding up") : t("② 아래로 쓸 때", "② Sliding down")).font(.headline).padding(.top, 14)
+            if up == nil {
+                ShortcutRecorder { keys in if let keys { up = keys } else { done(nil, nil) } }
+            } else {
+                ShortcutRecorder { keys in done(up, keys) }.id("down")
+            }
+        }
+    }
+}
+
+/// 앱별 끄기 (Pro): 게임·원격 데스크톱처럼 톡톡이 방해되는 앱
+struct ExcludedAppsSection: View {
+    @ObservedObject var settings = Settings.shared
+    @ObservedObject var license = License.shared
+    @ObservedObject var language = AppLanguage.shared
+
+    var body: some View {
+        Section(t("⭐ 앱별 끄기 (Pro)", "⭐ Turn off in apps (Pro)")) {
+            ForEach(settings.excludedApps, id: \.self) { id in
+                HStack {
+                    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) {
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 18, height: 18)
+                    }
+                    Text(Self.name(id))
+                    Spacer()
+                    Button(t("빼기", "Remove")) { settings.excludedApps.removeAll { $0 == id } }
+                }
+            }
+            HStack {
+                Text(t("이 앱들이 맨 앞에 있을 때는 톡톡이 쉬어요", "TokTok pauses while these apps are in front"))
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                if license.isPro {
+                    Menu(t("앱 추가", "Add app")) {
+                        ForEach(Self.runningApps(excluding: settings.excludedApps), id: \.self) { id in
+                            Button(Self.name(id)) { settings.excludedApps.append(id) }
+                        }
+                    }
+                    .frame(width: 120)
+                } else {
+                    Button(t("🔒 Pro", "🔒 Pro")) { license.openCheckout() }
+                }
+            }
+        }
+    }
+
+    static func name(_ id: String) -> String {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) else { return id }
+        return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    }
+
+    static func runningApps(excluding: [String]) -> [String] {
+        let ids = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .compactMap(\.bundleIdentifier)
+            .filter { !excluding.contains($0) && $0 != Bundle.main.bundleIdentifier }
+        return Array(Set(ids)).sorted { name($0).localizedCaseInsensitiveCompare(name($1)) == .orderedAscending }
+    }
+}
+
+/// 의견·아이디어 보내기 (서버를 거쳐 메일로)
+struct FeedbackSection: View {
+    @ObservedObject var language = AppLanguage.shared
+    @State private var text = ""
+    @State private var email = ""
+    @State private var status: String?
+    @State private var busy = false
+
+    var body: some View {
+        Section(t("💬 의견 · 아이디어 보내기", "💬 Send feedback or ideas")) {
+            TextEditor(text: $text)
+                .frame(height: 70)
+                .font(.body)
+                .overlay(alignment: .topLeading) {
+                    if text.isEmpty {
+                        Text(t("이런 제스처가 있으면 좋겠어요, 이게 잘 안 돼요…", "A gesture I'd love, something that doesn't work…"))
+                            .foregroundStyle(.tertiary).padding(.top, 1).padding(.leading, 5).allowsHitTesting(false)
+                    }
+                }
+            HStack {
+                TextField(t("답장 받을 이메일 (선택)", "Email for a reply (optional)"), text: $email)
+                    .textFieldStyle(.roundedBorder)
+                Button(busy ? t("보내는 중…", "Sending…") : t("보내기", "Send"), action: send)
+                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2 || busy)
+            }
+            if let status { Text(status).font(.caption).foregroundStyle(.secondary) }
+        }
+    }
+
+    private func send() {
+        busy = true; status = nil
+        Task {
+            var req = URLRequest(url: Store.server.appendingPathComponent("api/feedback"))
+            req.httpMethod = "POST"
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let os = ProcessInfo.processInfo.operatingSystemVersion
+            req.httpBody = try? JSONSerialization.data(withJSONObject: [
+                "message": text, "email": email, "lang": Store.langCode,
+                "app": Updater.current, "os": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
+                "pro": License.shared.payload != nil ? "yes" : "no",
+            ])
+            let ok = ((try? await URLSession.shared.data(for: req))?.1 as? HTTPURLResponse)?.statusCode == 200
+            status = ok ? t("고마워요! 잘 받았어요 🙏", "Thank you! We got it 🙏")
+                        : t("보내지 못했어요. help@seoriarts.com 으로 보내 주세요.", "Couldn't send. Please email help@seoriarts.com.")
+            if ok { text = "" }
             busy = false
         }
     }

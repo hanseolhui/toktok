@@ -44,6 +44,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         GestureDetector.shared.onGesture = { g in
             DispatchQueue.main.async { Settings.shared.handle(g) }
         }
+        GestureDetector.shared.onSlider = { side, up in
+            DispatchQueue.main.async { Settings.shared.handleSlider(side, up: up) }
+        }
+        GestureDetector.shared.onAppSwitch = { step in
+            DispatchQueue.main.async { Settings.shared.handleAppSwitch(step) }
+        }
+        Settings.shared.syncDetector()
+
+        // 타자 중 잘못 실행 방지: 다른 앱에서 키를 누른 시각 기록 (톡톡이 보낸 키는 제외)
+        let me = Int64(ProcessInfo.processInfo.processIdentifier)
+        NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { e in
+            if e.cgEvent?.getIntegerValueField(.eventSourceUnixProcessID) != me { Settings.shared.lastKeyTime = Date() }
+        }
 
         installEditMenu()
 
@@ -68,6 +81,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         Multitouch.current = mt
         mt.restart()
         mt.watchDevices()
+        mt.startWatchdog()
 
         // 새 버전이 있는지 조용히 확인 (있으면 메뉴·설정에 표시)
         Task { await Updater.shared.check(silent: true) }

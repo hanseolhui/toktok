@@ -19,7 +19,7 @@ enum Store {
     /// 구매 페이지 (언어에 맞게)
     static var buyPageURL: URL { URL(string: AppLanguage.shared.isKorean ? "https://toktok.seoriarts.com/buy?lang=ko#buy" : "https://toktok.seoriarts.com/en#buy")! }
     /// 개발자에게 커피 사주기
-    static let tipURL: URL? = URL(string: "https://paypal.me/hanseolhui")
+    static let tipURL: URL? = URL(string: "https://seoriarts.gumroad.com/coffee")
     /// 가격 표시
     static var priceText: String { t("평생 ₩4,900 · 맥 3대", "₩4,900 (about US$3.99) lifetime · 3 Macs") }
     /// 기기 인증서 서명 확인용 공개 키 (서버의 LICENSE_PRIVATE_KEY 짝)
@@ -46,7 +46,7 @@ final class License: ObservableObject {
         var isThisMac: Bool { device_id == License.deviceID }
     }
 
-    @Published private(set) var payload: Payload?
+    @Published private(set) var payload: Payload? { didSet { DispatchQueue.main.async { Settings.shared.syncDetector() } } }
 
     var isPro: Bool { !Store.sellsPro || payload != nil }
     var email: String? { payload?.email }

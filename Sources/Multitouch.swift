@@ -18,8 +18,8 @@ final class Multitouch {
     private let stop: Stop
     private var devices: [MTDeviceRef] = []
 
-    private static let callback: MTContactCallbackFunction = { _, touches, count, timestamp, _ in
-        GestureDetector.shared.process(touches, count: Int(count), time: timestamp)
+    private static let callback: MTContactCallbackFunction = { device, touches, count, timestamp, _ in
+        GestureDetector.detector(for: device).process(touches, count: Int(count), time: timestamp)
         return 0
     }
 
@@ -42,6 +42,7 @@ final class Multitouch {
     func restart() {
         for d in devices { unregister(d, Multitouch.callback); stop(d) }
         devices = []
+        GestureDetector.resetDevices()
         guard let list = createList()?.takeRetainedValue() as? [AnyObject] else { return }
         for obj in list {
             let d = Unmanaged.passUnretained(obj).toOpaque()
@@ -87,9 +88,43 @@ final class Multitouch {
         let work = DispatchWorkItem { [weak self] in
             self?.restart()
             Log.write("트랙패드 연결 변경 → 다시 찾기")
+            // 블루투스 트랙패드는 준비가 늦을 때가 있어 한 번 더
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in
+                guard let self, Self.systemDeviceCount() > self.devices.count else { return }
+                self.restart()
+            }
         }
         pending = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: work)   // 드라이버가 준비될 시간
+    }
+
+    /// 시스템에 연결된 트랙패드 수와 감지 중인 수가 다르면 다시 찾기 (알림을 놓쳐도 5초 안에 맞춰짐)
+    private var watchdog: Timer?
+    func startWatchdog() {
+        watchdog?.invalidate()
+        watchdog = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in self?.restartIfMissing() }
+    }
+
+    /// 마지막으로 본 시스템 트랙패드 수 (바뀌었을 때만 다시 찾음)
+    private var lastSystemCount = -1
+
+    private func restartIfMissing() {
+        let n = Self.systemDeviceCount()
+        defer { lastSystemCount = n }
+        if lastSystemCount == -1 { return }
+        if n != lastSystemCount {
+            Log.write("트랙패드 수 다름 (시스템 \(n), 감지 \(devices.count)) → 다시 찾기")
+            restart()
+        }
+    }
+
+    static func systemDeviceCount() -> Int {
+        var it: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("AppleMultitouchDevice"), &it) == KERN_SUCCESS else { return 0 }
+        defer { IOObjectRelease(it) }
+        var n = 0
+        while case let o = IOIteratorNext(it), o != 0 { n += 1; IOObjectRelease(o) }
+        return n
     }
 }
 

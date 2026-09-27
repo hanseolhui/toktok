@@ -1,9 +1,9 @@
 import Cocoa
 import ApplicationServices
 
-/// 맨 앞 창을 화면 왼쪽 반 / 오른쪽 반 / 가득으로 (손쉬운 사용 API 로 직접 이동)
+/// 맨 앞 창을 화면 반 · 4분할 · 가득 · 다음 모니터로 (손쉬운 사용 API 로 직접 이동)
 enum WindowTiler {
-    enum Mode { case left, right, fill }
+    enum Mode { case left, right, fill, topLeft, topRight, bottomLeft, bottomRight, nextScreen }
 
     static func tile(_ mode: Mode) {
         guard let app = NSWorkspace.shared.frontmostApplication else { return }
@@ -18,15 +18,30 @@ enum WindowTiler {
         // 창이 있는 화면 찾기 (손쉬운 사용 좌표는 주 화면 왼쪽 위가 원점)
         let frame = currentFrame(window) ?? .zero
         let center = CGPoint(x: frame.midX, y: frame.midY)
-        let screen = NSScreen.screens.first { axRect($0.frame).contains(center) } ?? NSScreen.main
-        guard let screen else { return }
-        let area = axRect(screen.visibleFrame)
+        let screens = NSScreen.screens
+        let index = screens.firstIndex { axRect($0.frame).contains(center) } ?? 0
+        guard !screens.isEmpty else { return }
+        var area = axRect(screens[index].visibleFrame)
 
         var target = area
+        let halfW = (area.width / 2).rounded(), halfH = (area.height / 2).rounded()
         switch mode {
-        case .left:  target.size.width = (area.width / 2).rounded()
-        case .right: target.size.width = (area.width / 2).rounded(); target.origin.x = area.maxX - target.width
+        case .left:  target.size.width = halfW
+        case .right: target.size.width = halfW; target.origin.x = area.maxX - halfW
         case .fill:  break
+        case .topLeft:     target.size = CGSize(width: halfW, height: halfH)
+        case .topRight:    target = CGRect(x: area.maxX - halfW, y: area.minY, width: halfW, height: halfH)
+        case .bottomLeft:  target = CGRect(x: area.minX, y: area.maxY - halfH, width: halfW, height: halfH)
+        case .bottomRight: target = CGRect(x: area.maxX - halfW, y: area.maxY - halfH, width: halfW, height: halfH)
+        case .nextScreen:
+            // 다음 모니터의 같은 비율 위치로 (크기는 그 화면에 맞게)
+            guard screens.count > 1 else { return }
+            let next = axRect(screens[(index + 1) % screens.count].visibleFrame)
+            let rx = (frame.minX - area.minX) / area.width, ry = (frame.minY - area.minY) / area.height
+            let w = min(frame.width, next.width), h = min(frame.height, next.height)
+            target = CGRect(x: min(next.minX + rx * next.width, next.maxX - w),
+                            y: min(next.minY + ry * next.height, next.maxY - h), width: w, height: h)
+            area = next
         }
         // 크기 제한이 있는 앱을 위해 위치 → 크기 → 위치 순서로 적용
         set(window, position: target.origin)
