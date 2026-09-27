@@ -460,14 +460,18 @@ struct FeedbackSection: View {
                     }
                 }
             HStack {
-                TextField(t("답장 받을 이메일 (선택)", "Email for a reply (optional)"), text: $email)
+                TextField("", text: $email, prompt: Text(t("답장 받을 이메일", "Your email for a reply")))
+                    .labelsHidden()
                     .textFieldStyle(.roundedBorder)
                 Button(busy ? t("보내는 중…", "Sending…") : t("보내기", "Send"), action: send)
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2 || busy)
+                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).count < 2 || !emailOK || busy)
             }
             if let status { Text(status).font(.caption).foregroundStyle(.secondary) }
+            else if !email.isEmpty && !emailOK { Text(t("이메일 주소를 확인해 주세요", "Please check your email address")).font(.caption).foregroundStyle(.red) }
         }
     }
+
+    private var emailOK: Bool { email.trimmingCharacters(in: .whitespaces).range(of: #"^[^@\s]+@[^@\s]+\.[^@\s]+$"#, options: .regularExpression) != nil }
 
     private func send() {
         busy = true; status = nil
