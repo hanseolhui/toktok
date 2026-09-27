@@ -4,16 +4,24 @@ set -euo pipefail
 cd "$(dirname "$0")"
 OUT="${1:-build}"
 APP="$OUT/TokTok.app"
-VERSION="0.1.0"
+VERSION="${VERSION:-0.1.0}"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-swiftc -O \
-  -import-objc-header Sources/MultitouchBridge.h \
-  -target "$(uname -m)-apple-macos13.0" \
-  Sources/main.swift \
-  -o "$APP/Contents/MacOS/TokTok"
+# ARCHS="arm64 x86_64" 로 유니버설 빌드 (배포용), 기본은 이 맥의 CPU용
+ARCHS="${ARCHS:-$(uname -m)}"
+BINS=()
+for arch in $ARCHS; do
+  swiftc -O \
+    -import-objc-header Sources/MultitouchBridge.h \
+    -target "$arch-apple-macos13.0" \
+    Sources/main.swift \
+    -o "$OUT/TokTok-$arch"
+  BINS+=("$OUT/TokTok-$arch")
+done
+lipo -create "${BINS[@]}" -output "$APP/Contents/MacOS/TokTok"
+rm -f "${BINS[@]}"
 
 cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
