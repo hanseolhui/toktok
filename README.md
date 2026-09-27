@@ -51,15 +51,16 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 - 모서리 톡은 '탭하여 클릭'을 켜 두면 클릭도 함께 일어나요
 - 설정 창의 **기본 설정으로 되돌리기** 로 언제든 처음 상태로
 
-## ⭐ 톡톡 Pro — 평생 $2.99
+## ⭐ 톡톡 Pro — 평생 $2.99 · 맥 3대
 
-제스처마다 **원하는 동작으로 바꾸기** — 이전/다음 탭, 새 탭, 닫은 탭 다시 열기, 창 정렬, Mission Control, 또는 **아무 단축키나 직접 녹화**.
+무료로도 제스처마다 **기본 제공 동작 13가지**를 자유롭게 고를 수 있어요.
+Pro는 여기에 없는 **나만의 단축키를 직접 녹화**해서 연결해요. 여러 키를 순서대로 실행할 수도 있어요 (⌘A → ⌘C).
 
-1. 설정 창의 **Pro 구매** (PayPal) 로 결제
-2. 결제한 PayPal 이메일로 라이선스 키가 와요
-3. 설정 창에 키를 붙여넣고 **등록** — 인터넷 없이 확인돼요
+1. [toktok.seoriarts.com](https://toktok.seoriarts.com/#buy) 에서 구매 (PayPal · 카드)
+2. 화면과 메일로 받은 **라이선스 코드**를 톡톡 설정 → 톡톡 Pro 에 붙여넣고 **등록**
+3. 한 번 등록하면 인터넷 없이 동작. 맥 3대까지, 포맷해도 같은 코드로 다시 등록
 
-제스처 켜고 끄기와 기본 동작은 계속 무료예요.
+📖 [사용 설명서](https://toktok.seoriarts.com/guide) · 💻 [기기 관리](https://toktok.seoriarts.com/manage) · ✉️ [코드 다시 받기](https://toktok.seoriarts.com/resend)
 
 ☕ 톡톡이 마음에 드셨다면 [개발자에게 커피 사주기](https://paypal.me/hanseolhui)
 
@@ -81,7 +82,7 @@ macOS 내부의 `MultitouchSupport` 프레임워크로 손가락 좌표를 실�
 | `Sources/Actions.swift` | 동작, 키·마우스 입력 |
 | `Sources/WindowTiler.swift` | 창 정렬 |
 | `Sources/Settings.swift`, `SettingsView.swift` | 설정 저장, 설정 창 |
-| `Sources/License.swift` | Pro 라이선스 확인 |
+| `Sources/License.swift` | Pro 라이선스 (서버 등록, 오프라인 확인) |
 
 직접 빌드: `./build.sh` (결과: `build/TokTok.app`), 배포용 공증 릴리스: `./release.sh 버전`
 
