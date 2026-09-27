@@ -199,6 +199,55 @@ enum Keys {
     }
 }
 
+// MARK: - 아이콘 (V자 두 손가락 + 톡 표시)
+
+enum Icon {
+    /// 크기 `side` 의 정사각형 안에 V자로 벌린 손과 (active 이면) 손끝의 톡 표시를 그림
+    static func draw(side: CGFloat, active: Bool, color: NSColor) {
+        let s = side / 18   // 18pt 기준 좌표
+        color.setFill(); color.setStroke()
+
+        /// (x, y) 에서 시작해 angle 도 기울어진 손가락 모양
+        func capsule(x: CGFloat, y: CGFloat, width: CGFloat, length: CGFloat, angle: CGFloat) -> NSBezierPath {
+            let p = NSBezierPath(roundedRect: NSRect(x: -width / 2 * s, y: 0, width: width * s, height: length * s),
+                                 xRadius: width / 2 * s, yRadius: width / 2 * s)
+            var t = AffineTransform(translationByX: x * s, byY: y * s)
+            t.rotate(byDegrees: angle)
+            p.transform(using: t)
+            return p
+        }
+        let palm = NSBezierPath(roundedRect: NSRect(x: 5.3 * s, y: 0.6 * s, width: 7.4 * s, height: 6.4 * s),
+                                xRadius: 2.6 * s, yRadius: 2.6 * s)
+        let hand = [
+            palm,
+            capsule(x: 7.3, y: 5.2, width: 2.5, length: 9.2, angle: 17),    // 검지
+            capsule(x: 10.7, y: 5.2, width: 2.5, length: 9.2, angle: -17),  // 중지
+            capsule(x: 6.2, y: 2.8, width: 2.3, length: 4.6, angle: 58),    // 엄지
+        ]
+        hand.forEach { $0.fill() }
+        guard active else { return }
+
+        // 손끝 바깥의 톡 표시 (작은 호)
+        for (cx, cy, start, end) in [(4.6, 14.1, 95.0, 190.0), (13.4, 14.1, -10.0, 85.0)]
+                as [(CGFloat, CGFloat, CGFloat, CGFloat)] {
+            let arc = NSBezierPath()
+            arc.appendArc(withCenter: NSPoint(x: cx * s, y: cy * s), radius: 3.0 * s,
+                          startAngle: start, endAngle: end)
+            arc.lineWidth = 1.1 * s; arc.lineCapStyle = .round
+            arc.stroke()
+        }
+    }
+
+    static func menuBar(active: Bool) -> NSImage {
+        let img = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { rect in
+            draw(side: rect.width, active: active, color: .black); return true
+        }
+        img.isTemplate = true
+        img.accessibilityDescription = "톡톡"
+        return img
+    }
+}
+
 // MARK: - 메뉴바 앱
 
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
@@ -273,8 +322,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateIcon() {
-        let name = TipTapDetector.shared.enabled ? "hand.tap.fill" : "hand.tap"
-        statusItem.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "톡톡")
+        statusItem.button?.image = Icon.menuBar(active: TipTapDetector.shared.enabled)
         statusItem.button?.appearsDisabled = !TipTapDetector.shared.enabled
     }
 

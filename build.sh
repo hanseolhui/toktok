@@ -34,5 +34,15 @@ cat > "$APP/Contents/Info.plist" <<EOF
 </plist>
 EOF
 
-codesign --force --sign - --identifier io.github.hanseolhui.toktok "$APP" >/dev/null 2>&1
+# 서명: Developer ID 인증서가 있으면 사용 (다시 빌드해도 손쉬운 사용 권한 유지), 없으면 임시 서명
+SIGN_ID="${TOKTOK_SIGN_ID:-$(security find-identity -v -p codesigning 2>/dev/null \
+  | awk '/Developer ID Application/ {print $2; exit}')}"
+if [ -n "$SIGN_ID" ]; then
+  codesign --force --options runtime --timestamp --sign "$SIGN_ID" \
+    --identifier io.github.hanseolhui.toktok "$APP" >/dev/null
+  echo "서명: Developer ID"
+else
+  codesign --force --sign - --identifier io.github.hanseolhui.toktok "$APP" >/dev/null 2>&1
+  echo "서명: 임시(ad-hoc) — 다시 빌드하면 손쉬운 사용 권한을 다시 허용해야 해요"
+fi
 echo "빌드 완료: $APP"
