@@ -43,7 +43,7 @@ trackpads.watchDevices()
 ```
 
 Keep the `Multitouch` instance alive (e.g. as a property) while you want gestures. `Tuning` exposes every threshold (tap duration, movement tolerance, corner size…).
-The TokTok app adds the actions, settings UI and Pro features (double taps, title-bar gestures, custom shortcuts, per-app actions) on top — those parts are not open source.
+The TokTok app adds the actions, settings UI and Pro features (radial menu, double taps, title-bar gestures, custom shortcuts, per-app actions) on top — those parts are not open source.
 
 ⭐ If this is useful, a star helps a lot!
 
@@ -102,6 +102,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 | 다섯 손가락 탭 | 다섯 손가락으로 동시에 톡 | Mission Control | |
 | 오른쪽 아래에서 쓸기 | 모서리에 대고 가운데 쪽으로 쓱 | 새 메모 작성 | |
 | 가장자리 슬라이더 ×4 | 왼쪽·오른쪽 끝은 위아래로, 위쪽·아래쪽 끝은 좌우로 | 밝기 · 볼륨 | |
+| ⭐ 원형 메뉴 (Pro) | 세 · 네 손가락을 대고 잠깐 → 방향으로 밀었다 떼기 | 앱 · 폴더 · 단축키 · 동작 8칸 | |
 | ⭐ 투탭 (Pro) | 모서리·위쪽 가운데·세·네 손가락 두 번 톡 | 4분할 · 다음 모니터 · 스크린샷 · 새 탭 | |
 | ⭐ 제목 줄 제스처 (Pro) | 창 제목 줄에서 두 손가락으로 쓸기 · 오므리기 · 벌리기 | 반쪽 · 가득 · 가운데 · 4분할 · 최소화 · 전체 화면 | |
 | ⭐ 스와이프 앱 전환 (Pro) | 한 손가락 대고 두 손가락 좌우로 | 앱 전환 ⌘Tab | |
@@ -115,7 +116,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/hanseolhui/toktok/main/i
 ## ⭐ 톡톡 Pro — 정가 ₩9,900 평생 · 맥 3대 (출시 기념 50% ₩4,950)
 
 무료로도 제스처마다 **기본 제공 동작 42가지**를 자유롭게 고를 수 있어요.
-Pro는 **투탭**, **제목 줄 제스처**, 모든 제스처에 **나만의 단축키**(여러 키 순서대로도), **앱 실행 · 단축어 실행**, **앱별 동작**, 슬라이더 가로 스크롤·확대/축소, 스와이프 앱 전환을 더해요.
+Pro는 **원형 메뉴**(세 손가락을 대고 잠깐 → 방향으로 밀어 앱 · 폴더 · 단축키 실행), **투탭**, **제목 줄 제스처**, 모든 제스처에 **나만의 단축키**(여러 키 순서대로도), **앱 실행 · 단축어 실행**, **앱별 동작**, 슬라이더 가로 스크롤·확대/축소, 스와이프 앱 전환을 더해요.
 
 1. [toktok.seoriarts.com](https://toktok.seoriarts.com/#buy) 에서 구매 (Gumroad · 카드 · Apple Pay · Google Pay)
 2. 메일로 받은 **라이선스 코드**를 톡톡 설정 → **⭐ Pro** 탭에 붙여넣고 **등록**
