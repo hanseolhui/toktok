@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/cover.png" width="640" alt="TokTok"></p>
 
-# 👆 TokTok (톡톡) — trackpad tap gestures for Mac
+# ✌️ TokTok (톡톡) — trackpad tap gestures for Mac
 
 **Rest a finger on your trackpad and tap next to it.** Back/forward, tab switching, window snapping from the corners, volume & brightness sliders on the edges — just check a box and pick an action.
 
@@ -49,7 +49,7 @@ The TokTok app adds the actions, settings UI and Pro features (radial menu, doub
 
 ---
 
-# 👆 톡톡 (TokTok)
+# ✌️ 톡톡 (TokTok)
 
 **맥 트랙패드에 손가락을 대고, 옆 손가락으로 톡 — 뒤로 가기 / 앞으로 가기.**
 세 손가락 탭 가운데 클릭, 모서리 톡 창 정렬까지. 가볍고 무료인 메뉴바 앱이에요.
