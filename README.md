@@ -30,7 +30,7 @@ Most people who customize their trackpad do it inside a big all-in-one tool. Tok
 |---|---|---|
 | Rest & tap left / right | rest your middle finger, tap with your index (or the other way round) | Back ⌘[ / Forward ⌘] |
 | Two fingers rest + tap | rest two fingers, tap left / right / between | previous tab / next tab / reload |
-| Three-finger tap · press | tap with three fingers · press the pad down with three fingers | middle click (open link in new tab) · middle click & drag |
+| Three-finger tap · press | tap with three fingers · press the pad down with three fingers (turn on in Settings) | middle click (open link in new tab) · middle click & drag |
 | Corner taps | tap a corner or the top center | snap left / right / fill; **tap again to cycle ½ → ⅓ → ⅔** |
 | Edge sliders | slide along any edge | volume · brightness, one haptic tick per step |
 | ⭐ Radial menu | rest three fingers, then slide | 8 slots of apps, folders, shortcuts; per-app sets and submenus |
